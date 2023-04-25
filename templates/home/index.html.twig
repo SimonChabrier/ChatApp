@@ -9,7 +9,7 @@
 </div>
 
 <div>
-<ol id="messages"></ol>
+<ul id="messages"></ul>
 </div>
 
 <div class="container">
@@ -28,13 +28,13 @@
 <script>
 
 
-// set the event source
+// On crée un nouvel objet EventSource, qui va se connecter au hub Mercure
 const link = 'https://mercure.simschab.cloud/.well-known/mercure';
 const url = new URL(link);
 url.searchParams.append('topic', 'montopic');
 const eventSource = new EventSource(url);
 
-// listen for messages
+// On écoute les messages reçus du hub
 eventSource.onmessage = e => {
     console.log(e.data);
     // do something with the data
@@ -43,24 +43,33 @@ eventSource.onmessage = e => {
     document.getElementById('messages').appendChild(li);
 };
 
+// On prépare l'envoi d'un message
 const sbmtbtn = document.getElementById('submitBtn');
 const dataText = document.getElementById('dataText');
 const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjdXJlIjp7InB1Ymxpc2giOlsiKiJdLCJzdWJzY3JpYmUiOlsiKiJdfX0.nINXJPMGL7u4vvquYYm3zgMosrqrxTSooTs7R_OJLZA'
 
+// on créer un objet data qui contient le topic et le message
 const data = {
     topic: 'montopic',
     mesage: dataText.value
 }
 
+// on soumet le formulaire
 sbmtbtn.addEventListener('click', (e) => {
     e.preventDefault();
-    console.log(dataText.value);
+
+    // on envoie le message au hub
     fetch('https://mercure.simschab.cloud/.well-known/mercure', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             'Authorization': 'Bearer ' + `${TOKEN}` // inclure le cookie d'authentification dans l'en-tête Authorization
         },
+        // on encode le message et le topic en JSON dans le corps de la requête sur des clés data et topic
+        // en utilisant:  encodeURIComponent(...) on encode les caractères spéciaux si il y en a
+        // comme ça on est sur que les valeurs des paramètres sont correctement encodés et envoyés en tant que données de formulaire URL-encodées valides.
+        // même si ici c'est pas nécessaire car on envoie pas de caractères spéciaux.
+        // infos : https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
         body: `data=${encodeURIComponent(JSON.stringify(dataText.value))}&topic=${encodeURIComponent(data.topic)}` // envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
     })
     .then(response => response.text())
