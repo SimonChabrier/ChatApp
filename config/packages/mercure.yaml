@@ -1,0 +1,12 @@
+mercure:
+    hubs:
+        default:
+            url: '%env(MERCURE_URL)%'
+            public_url: '%env(MERCURE_PUBLIC_URL)%'
+            jwt:
+                #secret: '%env(MERCURE_JWT_SECRET)%'
+                publish: '*'
+                subscribe: '*'
+                algorithm: HS256
+                # si je met le token directement je n'ai pas besoin de la secret kay parce que le token est déjà encodé avec la secret key
+                value: '%env(MERCURE_TOKEN)%'
