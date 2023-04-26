@@ -3,9 +3,8 @@
 {% block title %}Home{% endblock %}
 
 {% block body %}
-
 <div class="container">
-<h1>Home Ma Couille !</h1>
+    <h1>Home</h1>
 </div>
 
 <div class="container">
@@ -15,7 +14,7 @@
 <div class="container">
     <form action="">
         <fieldset>
-        <legend>Envoyer un message</legend>
+        <legend>Message vers Mercure Hub & Retour en SSE</legend>
         <input type="text" id="dataText">
         <br>
         <small>Envoyer vers mercure hub...</small>
@@ -25,16 +24,14 @@
     </form>
 </div>
 
-
-
 {% block javascript %}
 <script>
-
 
 // On crée un nouvel objet EventSource, qui va se connecter au hub Mercure
 const link = 'https://mercure.simschab.cloud/.well-known/mercure';
 const url = new URL(link);
 url.searchParams.append('topic', 'montopic');
+url.searchParams.append('topic', 'montopicfront');
 const eventSource = new EventSource(url);
 
 // On écoute les messages reçus du hub
@@ -53,7 +50,7 @@ const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjdXJlIjp7InB1Ymxpc2gi
 
 // on créer un objet data qui contient le topic et le message
 const data = {
-    topic: 'montopic',
+    topic: 'montopicfront',
     mesage: dataText.value
 }
 
@@ -84,7 +81,6 @@ sbmtbtn.addEventListener('click', (e) => {
 });
 
 // Envoie au controller
-
 const submitToBack = document.getElementById('submitToBack');
 
 submitToBack.addEventListener('click', (e) => {
@@ -92,29 +88,18 @@ submitToBack.addEventListener('click', (e) => {
     // on envoie le message au hub
     fetch('/publish', {
         method: 'POST',
-        //headers: {
-            //'Content-Type': 'application/json',
-            // pas besoin du token on passe par le backend qui a accès au token défini dans la configuration du hub
-            //'Authorization': 'Bearer ' + `${TOKEN}` // inclure le cookie d'authentification dans l'en-tête Authorization
-        //},
-        // on encode le message et le topic en JSON dans le corps de la requête sur des clés data et topic
-        // en utilisant:  encodeURIComponent(...) on encode les caractères spéciaux si il y en a
-        // comme ça on est sur que les valeurs des paramètres sont correctement encodés et envoyés en tant que données de formulaire URL-encodées valides.
-        // même si ici c'est pas nécessaire car on envoie pas de caractères spéciaux.
-        // infos : https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
-        // body: `data=${encodeURIComponent(JSON.stringify(dataText.value))}&topic=${encodeURIComponent(data.topic)}` // envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
         body: JSON.stringify(dataText.value)
      })
     .then(response => response.text())
     .then(data => {
         console.log(data);
+        // on vide le champ de saisie
+        dataText.value = '';
     })
     .catch(error => console.log(error));
 });
 
-
 </script>
-
 {% endblock %}
 
 {% endblock %}
