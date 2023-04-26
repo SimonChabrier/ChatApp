@@ -8,7 +8,7 @@
 <h1>Home Ma Couille !</h1>
 </div>
 
-<div>
+<div class="container">
 <ul id="messages"></ul>
 </div>
 
@@ -21,8 +21,11 @@
         <small>Envoyer vers mercure hub...</small>
         </fieldset>
         <button id="submitBtn" class="btn btn-success" type="submit">Envoyer</button>
+        <button id="submitToBack" class="btn btn-info" type="submit">Envoyer au controller</button>
     </form>
 </div>
+
+
 
 {% block javascript %}
 <script>
@@ -63,7 +66,8 @@ sbmtbtn.addEventListener('click', (e) => {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': 'Bearer ' + `${TOKEN}` // inclure le cookie d'authentification dans l'en-tête Authorization
+            'Authorization': 'Bearer ' + `${TOKEN}` // inclure le cookie d'authentification dans l'en-tête Authorization si on ne passe pas par le backend
+                                                    // car en front on n'accède pas au token défini dans la configuration du hub dans le backend
         },
         // on encode le message et le topic en JSON dans le corps de la requête sur des clés data et topic
         // en utilisant:  encodeURIComponent(...) on encode les caractères spéciaux si il y en a
@@ -72,6 +76,35 @@ sbmtbtn.addEventListener('click', (e) => {
         // infos : https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
         body: `data=${encodeURIComponent(JSON.stringify(dataText.value))}&topic=${encodeURIComponent(data.topic)}` // envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
     })
+    .then(response => response.text())
+    .then(data => {
+        console.log(data);
+    })
+    .catch(error => console.log(error));
+});
+
+// Envoie au controller
+
+const submitToBack = document.getElementById('submitToBack');
+
+submitToBack.addEventListener('click', (e) => {
+    e.preventDefault();
+    // on envoie le message au hub
+    fetch('/publish', {
+        method: 'POST',
+        //headers: {
+            //'Content-Type': 'application/json',
+            // pas besoin du token on passe par le backend qui a accès au token défini dans la configuration du hub
+            //'Authorization': 'Bearer ' + `${TOKEN}` // inclure le cookie d'authentification dans l'en-tête Authorization
+        //},
+        // on encode le message et le topic en JSON dans le corps de la requête sur des clés data et topic
+        // en utilisant:  encodeURIComponent(...) on encode les caractères spéciaux si il y en a
+        // comme ça on est sur que les valeurs des paramètres sont correctement encodés et envoyés en tant que données de formulaire URL-encodées valides.
+        // même si ici c'est pas nécessaire car on envoie pas de caractères spéciaux.
+        // infos : https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
+        // body: `data=${encodeURIComponent(JSON.stringify(dataText.value))}&topic=${encodeURIComponent(data.topic)}` // envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
+        body: JSON.stringify(dataText.value)
+     })
     .then(response => response.text())
     .then(data => {
         console.log(data);
