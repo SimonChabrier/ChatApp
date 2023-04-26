@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Message\Mercure;
 use Symfony\Component\Mercure\Update;
 use Symfony\Component\Mercure\HubInterface;
+
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -33,6 +34,7 @@ class SseController extends AbstractController
         // Ici on dispatche en synchrone en interne car le hub Meruure est asynchrone par défaut de son côté
         // donc c'est lui qui va gérer l'envoi des données aux clients sans bloquer le serveur de cette app.
         // et qu'on a besoin de récupérer la réponse pour l'afficher dans la vue tout de suite.
+        // Pas besoin de lancer de worker pour le bus en synchrone et pas besoin de table dans la BDD pour les messages.
         $bus->dispatch(new Mercure('montopic', $data));
 
         return new JsonResponse([
