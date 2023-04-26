@@ -4,9 +4,51 @@ mercure:
             url: '%env(MERCURE_URL)%'
             public_url: '%env(MERCURE_PUBLIC_URL)%'
             jwt:
-                #secret: '%env(MERCURE_JWT_SECRET)%'
+                #secret: '%env(MERCURE_JWT_SECRET)%' # Si je commente ici il faut comenter aussi la variable d'environnement MERCURE_JWT_SECRET dans le fichier .env
                 publish: '*'
                 subscribe: '*'
-                algorithm: HS256
-                # si je met le token directement je n'ai pas besoin de la secret kay parce que le token est déjà encodé avec la secret key
+                algorithm: HS256 # le format d'encodage du token utilisé par mercure et à la génération du token sur jwt.io avec la secret key. Si on change le format d'encodage du token il faut changer l'algorithm
+                # si je met le token directement je n'ai pas besoin de la secret kay parce que le token est déjà encodé avec la secret key. 
+                # Mais si je veux générer le token avec la secret key il faut décommnter la ligne secret et mettre la secret key dans la variable d'environnement MERCURE_JWT_SECRET
                 value: '%env(MERCURE_TOKEN)%'
+
+# EXEMPLE DE CONFIGURATION FOURNI PAR SYMFONY DOC
+
+# mercure:
+#     hubs:
+#         default:
+#             url: https://mercure-hub.example.com/.well-known/mercure
+#             jwt:
+#                 secret: '!ChangeThisMercureHubJWTSecretKey!'
+#                 publish: ['foo', 'https://example.com/foo']
+#                 subscribe: ['bar', 'https://example.com/bar']
+#                 algorithm: 'hmac.sha256'
+#                 provider: 'My\Provider'
+#                 factory: 'My\Factory'
+#                 value: 'my.jwt'
+
+
+# secret: the key to use to sign the JWT - A key of the same size as the hash output (for instance, 256 bits for "HS256") or larger MUST be used. (all other options, beside algorithm, subscribe, and publish will be ignored)
+# publish: a list of topics to allow publishing to when generating the JWT (only usable when secret, or factory are provided)
+# subscribe: a list of topics to allow subscribing to when generating the JWT (only usable when secret, or factory are provided)
+# algorithm: The algorithm to use to sign the JWT (only usable when secret is provided)
+# provider: The ID of a service to call to provide the JWT (all other options will be ignored)
+# factory: The ID of a service to call to create the JWT (all other options, beside subscribe, and publish will be ignored)
+# value: the raw JWT to use (all other options will be ignored)
+
+# Faire un token sur https://jwt.io/#debugger-io?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjdXJlIjp7InB1Ymxpc2giOlsiKiJdfX0.iHLdpAEjX4BqCsHJEegxRmO-Y6sMxXwNATrQyRNt3GY avec la secret key et le mettre dans la variable d'environnement MERCURE_TOKEN
+# ajouter ça dans le payload et coller la secret key dans l'input "verified signature" et générer le token pour autoriser la publication et la souscription à tous les topics   
+
+# {
+#   "mercure": {
+#     "publish": [
+#       "*"
+#     ],
+#     "subscribe": [
+#       "*"
+#     ]
+#   }
+# }
+
+# Là tout est ok, je peux publier et souscrire à tout les topics
+# la durée de vie de ce token est illimité. Pour le rendre expirable il faut ajouter une date d'expiration dans le payload
