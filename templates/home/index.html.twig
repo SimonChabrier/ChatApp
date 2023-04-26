@@ -37,7 +37,7 @@ const eventSource = new EventSource(url);
 // On écoute les messages reçus du hub
 eventSource.onmessage = e => {
     console.log(e.data);
-    // do something with the data
+    // on fait ce qu'on veut avec le message reçu du hub
     const li = document.createElement('li');
     li.textContent = e.data;
     document.getElementById('messages').appendChild(li);

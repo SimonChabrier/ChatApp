@@ -8,5 +8,5 @@ mercure:
                 publish: '*'
                 subscribe: '*'
                 algorithm: HS256
-                # si je met le token directement je n'ai pas besoin del a secret kay parce que le token est déjà encodé avec la secret key
+                # si je met le token directement je n'ai pas besoin de la secret kay parce que le token est déjà encodé avec la secret key
                 value: '%env(MERCURE_TOKEN)%'
