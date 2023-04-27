@@ -30,8 +30,10 @@ class LogoutSuccessHandler extends AbstractController implements LogoutSuccessHa
             return $this->redirectToRoute('app_home');
         }
 
-        $user = $this->userRepository->findOneBy(['username' => $request->getSession()->get('_security.last_username')]);
+        $user = $this->getUser();
         $user->setOnline(0);
+        
+        $this->em->persist($user);
         $this->em->flush();
 
         return $this->redirectToRoute('app_home');

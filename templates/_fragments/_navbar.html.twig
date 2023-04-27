@@ -5,7 +5,7 @@
         <li><a href="{{ path('app_channel_index') }}">Canaux</a></li>
     </ul>
     </div>
-    <div>
+    <div class="user_info">
     <ul>
         {% if app.user.username is defined %}
         <li class="username">Connecté : {{ app.user.username }} / <a href="{{ path('app_logout') }}">Logout</a></li>
