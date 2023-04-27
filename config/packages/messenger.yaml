@@ -14,5 +14,7 @@ framework:
             sync: 'sync://'
 
         routing:
-            # Route your messages to the transports
+            # Retourne les messages directement au client
             App\Message\Mercure: sync
+            # persiste les messages dans la base de données
+            App\Message\Chat: async

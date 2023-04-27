@@ -17,12 +17,14 @@ final class MercureHandler implements MessageHandlerInterface
     }
 
     public function __invoke(Mercure $message)
-    {
+    {   
+        // on crée un objet Update qui contient le nom du topic et les données à publier
         $update = new Update(
             $message->getTopic(),
             $message->getData()
         );
 
+        // on publie l'objet Update dans le hub qui va ensuite envoyer les données aux clients abonnés
         $this->hub->publish($update);
     }
 }

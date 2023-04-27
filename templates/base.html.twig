@@ -26,6 +26,15 @@
         {# {% endblock %} #}
     </head>
     <body>
+        {% block userinfo %}
+        <div class="container">
+        {% if app.user.username is defined %}
+            <p class="username">Connecté : {{ app.user.username }} / <a href="{{ path('app_logout') }}">Logout</a></p>
+        {% else %}
+        <a href="{{ path('app_login') }}">Se connecter</a>
+        {% endif %}
+        </div>
+        {% endblock %}
         {% block body %}{% endblock %}
     </body>
 </html>
