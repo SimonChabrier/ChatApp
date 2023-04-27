@@ -7,11 +7,13 @@ final class Mercure
 
     private $topic;
     private $data;
+    private $username;
 
-    public function __construct(string $topic, string $data)
+    public function __construct(string $topic, string $data, string $username)
     {
         $this->topic = $topic;
         $this->data = $data;
+        $this->username = $username;
     }
     /**
      * get Mercure topic name
@@ -31,5 +33,15 @@ final class Mercure
     public function getData(): string
     {
         return $this->data;
+    }
+
+    /**
+     * get Mercure topic username
+     *
+     * @return string
+     */
+    public function getUsername(): string
+    {
+        return $this->username;
     }
 }

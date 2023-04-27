@@ -27,8 +27,14 @@
         <p>Messages du channel {{ channel.name }}</p>
         <ul id="messages">
         {% for message in channel.messages %}
+            {# si message.channel.id est égale à channel.id alors afficher le message #}
             {% if message.channel.id == channel.id %}
-                <li>{{ message.author.username }} - {{ message.content }}</li>
+            {# si message.author.username est égale à app.user.username alors colorer en bleu sinon en rouge #}
+                {% if message.author.username == app.user.username %}
+                    <li style="color: blue">{{ message.author.username }} - {{ message.content }}</li>
+                {% else %}
+                    <li style="color: red">{{ message.author.username }} - {{ message.content }}</li>
+                {% endif %}
             {% endif %}
         {% endfor %}
           </ul>
@@ -62,11 +68,13 @@ const eventSource = new EventSource(url);
 console.log(eventSource);
 // On écoute les messages reçus du hub
 eventSource.onmessage = e => {
-    console.log(e.data);
-    // on fait ce qu'on veut avec le message reçu du hub
+    
     const li = document.createElement('li');
-    const username = '{{ app.user.username }}';
-    li.textContent = e.data + ' - ' + new Date().toLocaleTimeString();
+    // on récupère le message et on le parse en JSON pour pouvoir l'afficher dans le DOM.
+    const data = JSON.parse(e.data);
+    li.textContent = data.author + ' - ' + data.message // + ' - ' + new Date().toLocaleTimeString();
+    data.author == '{{ app.user.username }}' ? li.style.color = 'blue' : li.style.color = 'red';
+    console.log(data.author == '{{ app.user.username }}');
     // ajouter aussi le user qui a envoyé le message
     
     document.getElementById('messages').appendChild(li);
