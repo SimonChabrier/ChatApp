@@ -1,0 +1,23 @@
+<aside>
+<div>
+<h2>Chats</h2>
+</div>
+<div>
+{% if all_channels.getAllChannels() is not empty %}
+<ol>
+{% for channel in all_channels.getAllChannels() %}
+    <li>
+        <a href="{{ path('app_channel_show', {'id': channel.id}) }}">{{ channel.name }}</a>
+        <span id="notifIcon"></span> 
+        {# on prepare une span pour le nombre de notif...à gèrer en js 
+        et renvoyer les notifs depuis le controller...#}
+    </li>
+{% endfor %}
+{% else %}
+    <li>
+        <a href="{{ path('app_channel_new') }}">Créer un nouveau chat</a>
+    </li>
+{% endif %}
+</ol>
+</div>
+</aside>

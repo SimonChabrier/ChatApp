@@ -1,0 +1,119 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Channel{% endblock %}
+
+{% block body %}
+    
+    <div class="date">
+    <h1>Canal : {{ channel.name }}</h1>
+        <h5>Date de création - {{ channel.createdAt ? channel.createdAt | format_datetime('short', 'none', locale='fr') : '' }}</h5>
+    </div>
+
+    <div class="btn-group" role="group" data-toggle="buttons">
+        <a href="{{ path('app_channel_index') }}" style="margin-right: 5px;"><button type="button" class="btn btn-primary">Canaux</button></a>
+        <a href="{{ path('app_channel_edit', {'id': channel.id}) }}" style="margin-right: 5px;"><button class="btn btn-primary">Modifier</button></a>
+        {{ include('channel/_delete_form.html.twig') }}
+    </div>
+<hr>
+    <div>
+        <h2>Messages</h2>
+        <p>Messages du channel {{ channel.name }}</p>
+    </div>
+
+    <div id="messages">
+    {% for message in channel.messages %}
+        {% if message.channel.id == channel.id %}
+            {% set style = message.author.username == app.user.username ? '#86b7b5' : '#4f6a69' %}
+            {% set float_side = message.author.username == app.user.username ? 'right' : 'left' %}
+            <div class="message" style="background-color: {{ style }}; float: {{ float_side }}; ">
+                {{ message.author.username }} - {{ message.content }}
+            </div>
+        {% endif %}
+    {% endfor %}
+    </div>
+<hr>
+    <div>
+        <form action="">
+            <fieldset>
+            <legend>Nouveau message</legend>
+            <input type="text" id="dataText" class="form-control" placeholder="bla bla bla ...">
+            <small>Envoyer vers mercure hub...</small>
+            </fieldset>
+            <button id="submitToBack" class="btn btn-success" type="submit">Envoyer</button>
+        </form>
+    </div>
+
+
+
+{% block javascript %}
+<script>
+
+/////////////////////////////////////////********* SUB ************////////////////////////////////////////////
+
+// On crée un nouvel objet EventSource, qui va se connecter au hub Mercure
+const link = 'https://mercure.simschab.cloud/.well-known/mercure';
+
+const url = new URL(link);
+url.searchParams.append('topic', encodeURIComponent("chat/{{ channel.id }}"));
+
+const eventSource = new EventSource(url);
+
+eventSource.onmessage = e => { 
+    const messages = document.getElementById('messages');
+    const div = document.createElement('div');
+    // on récupère le message et on le parse en JSON pour pouvoir l'afficher dans le DOM.
+    const data = JSON.parse(e.data);
+    div.textContent = data.author + ' - ' + data.message;
+    div.classList.add('message');
+    div.style.float = data.author == '{{ app.user.username }}' ? 'right' : 'left';
+    data.author == '{{ app.user.username }}' ? div.style.backgroundColor = '#86b7b5' : div.style.backgroundColor = '#4f6a69';
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+};
+
+/////////////////////////////////////////********* PUB ************////////////////////////////////////////////
+
+// On prépare l'envoi d'un message
+const sbmtbtn = document.getElementById('submitBtn');
+const submitToBack = document.getElementById('submitToBack');
+const dataText = document.getElementById('dataText');
+const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjdXJlIjp7InB1Ymxpc2giOlsiKiJdLCJzdWJzY3JpYmUiOlsiKiJdfX0.nINXJPMGL7u4vvquYYm3zgMosrqrxTSooTs7R_OJLZA'
+
+// on créer un objet data qui contient le topic et le message
+
+const data = {
+    topic: encodeURIComponent("chat/{{ channel.id }}"),
+    message: '',
+    channel_id: '{{ channel.id }}',
+    author: '{{ app.user.username }}',
+    author_id: '{{ app.user.id }}'
+}
+
+// envoir le message au controller Front To Back
+submitToBack.addEventListener('click', (e) => {
+    e.preventDefault();
+    // on met à jour l'objet data avec le message saisi
+    data.message = dataText.value;
+    // on envoie le message au hub
+    fetch('/publish', {
+        method: 'POST',
+        body: JSON.stringify(data) 
+     })
+    .then(response => response.text())
+    .then(data => {
+        console.log(data);
+        // on vide le champ de saisie
+        dataText.value = '';
+    })
+    .catch(error => console.log(error));
+});
+
+/////////////////////////////////////////********* INIT SCROLL ************////////////////////////////////////////////
+
+document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+
+
+</script>
+{% endblock %}
+
+{% endblock %}

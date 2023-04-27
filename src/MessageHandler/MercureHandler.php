@@ -17,12 +17,20 @@ final class MercureHandler implements MessageHandlerInterface
     }
 
     public function __invoke(Mercure $message)
-    {
+    {   
+        // on crée un objet JSON qui contient les données à publier et retourner en JSON au frontend tout de suite après pour l'afficher.
+        $data = json_encode([
+            'message' => $message->getData(),
+            'author' => $message->getUsername()
+        ]);
+
+        // on crée un objet Update qui contient le nom du topic et les données à publier
         $update = new Update(
             $message->getTopic(),
-            $message->getData()
+            $data
         );
 
+        // on publie l'objet Update dans le hub qui va ensuite envoyer les données aux clients abonnés
         $this->hub->publish($update);
     }
 }
