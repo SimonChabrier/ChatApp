@@ -29,14 +29,14 @@ class SseController extends AbstractController
             $request->getContent(), true // getContent() récupère le body de la requête
         );
         
+        $user = $this->getUser();
         // Ici on dispatche en synchrone en interne car le hub Meruure est asynchrone par défaut de son côté
         // donc c'est lui qui va gérer l'envoi des données aux clients sans bloquer le serveur de cette app.
         // et qu'on a besoin de récupérer la réponse pour l'afficher dans la vue tout de suite.
         // Pas besoin de lancer de worker pour le bus en synchrone et pas besoin de table dans la BDD pour les messages.
-        $bus->dispatch(new Mercure($data['topic'], $data['message']));
+        $bus->dispatch(new Mercure($data['topic'], $user->getUsername() . ' - ' . $data['message']));
 
-        // maintenant on dipsatche en asynchrone pour ne pas bloquer le serveur de cette app
-        // et persister les messages.
+        // maintenant on dipsatche en asynchrone pour gèrer le stockage des messages en BDD
         $bus->dispatch(new Chat($data['message'], (int) $data['channel_id'], (int) $data['author_id']));
 
         return new JsonResponse([
