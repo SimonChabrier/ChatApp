@@ -26,30 +26,21 @@
         {# {% endblock %} #}
     </head>
     <body>
-        {% block userinfo %}
-        <div class="container">
-        <nav>
-        <div>
-            <ul>
-                <li><a href="{{ path('app_home') }}">Home</a></li>
-                <li><a href="{{ path('app_channel_index') }}">Canaux</a></li>
-            </ul>
-            </div>
-            <div>
-            <ul>
-                {% if app.user.username is defined %}
-                <li class="username">Connecté : {{ app.user.username }} / <a href="{{ path('app_logout') }}">Logout</a></li>
-                {% else %}
-                <li><a href="{{ path('app_login') }}">Se connecter</a></li>
-                {% endif %}
-            </ul>
-            </div>
-        </nav>
-    </div>
-        
+        {% block nav %}
+        <div class="nav">
+            {{ include('_fragments/_navbar.html.twig')  }}
+        </div>
         {% endblock %}
-        <div class="container">
-        {% block body %}{% endblock %}
+
+        {% block sidebar %}
+        <div class="aside">
+        {{ include('_fragments/_sidebar.html.twig')  }}
+        </div>
+        {% endblock %}
+
+        <div class="main">
+        {% block body %}
+        {% endblock %}
         </div>
     </body>
 </html>

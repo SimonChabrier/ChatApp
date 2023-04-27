@@ -21,7 +21,9 @@ security:
             logout:
                 path: app_logout
                 # where to redirect after logout
-                # target: app_any_route
+                target: app_home
+                # handle a logout succes to flush user status to offline in db
+                success_handler: App\Security\LogoutSuccessHandler
 
             # activate different ways to authenticate
             # https://symfony.com/doc/current/security.html#the-firewall
@@ -32,7 +34,10 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
+            - { path: ^/channel, roles: [ ROLE_ADMIN, ROLE_USER, IS_AUTHENTICATED_FULLY ] }
+            - { path: ^/login$, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+            - { path: ^/$, roles: IS_AUTHENTICATED_FULLY }
+            # - { path: ^/login, roles: [ ROLE_ADMIN, ROLE_USER ] }
         # - { path: ^/profile, roles: ROLE_USER }
 
 when@test:

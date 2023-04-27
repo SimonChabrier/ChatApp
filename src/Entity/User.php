@@ -54,6 +54,22 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     private $messages;
 
+    /**
+     * @ORM\Column(type="boolean")
+     */
+    private $online = 0;
+
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $loginCount;
+
+    /**
+     * @ORM\Column(type="datetime", options={"default": "CURRENT_TIMESTAMP"})
+     */
+    private $lastConnection;
+
+
     public function __construct()
     {
         $this->messages = new ArrayCollection();
@@ -184,4 +200,41 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this;
     }
+
+    public function isOnline(): ?bool
+    {
+        return $this->online;
+    }
+
+    public function setOnline(bool $online): self
+    {
+        $this->online = $online;
+
+        return $this;
+    }
+
+    public function getLoginCount(): ?int
+    {
+        return $this->loginCount;
+    }
+
+    public function setLoginCount(int $loginCount): self
+    {
+        $this->loginCount = $loginCount;
+
+        return $this;
+    }
+
+    public function getLastConnection(): ?\DateTimeInterface
+    {
+        return $this->lastConnection;
+    }
+
+    public function setLastConnection(\DateTimeInterface $lastConnection): self
+    {
+        $this->lastConnection = $lastConnection;
+
+        return $this;
+    }
+
 }
