@@ -2,33 +2,38 @@
 
 namespace App\MessageHandler;
 
+use App\Entity\Message;
+use App\Entity\Channel;
+use App\Entity\User;
+
 use App\Message\Chat;
+
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
 
 final class ChatHandler implements MessageHandlerInterface
 {   
     // TODO : à décommenter pour sauvegarder les messages en BDD
-    // private $message;
-    // private $manager;
+    private $manager;
 
-    // public function __construct(Messsage $rmessage, EntityManagerInterface $manager)
-    // {
-    //     $this->message = $rmessage;
-    //     $this->manager = $manager;
-    // }
-
-     public function __invoke(Chat $message)
+    public function __construct(EntityManagerInterface $manager)
     {
-        // // on crée un objet Message et on le remplit avec les données du formulaire
-        // $message = new Message();
-        // $message->setMessage($message->getMessage());
-        // $message->setTopic($message->getTopic());
-        // // ici il faut récupèrer le user connecté pour le mettre dans le champ author
-        // $message->setAuthor($message->getUserName());
+        $this->manager = $manager;
+    }
 
-        // // on sauvegarde le message en BDD
-        // $this->manager->persist($message);
-        // $this->manager->flush();
+     public function __invoke(Chat $chat)
+    {   
+        $channel = $this->manager->getRepository(Channel::class)->findOneBy(['id' => $chat->getChannelId()]);
+        $user = $this->manager->getRepository(User::class)->findOneBy(['id' => $chat->getAuthorId()]);
+
+        $message = new Message();
+        $message->setContent($chat->getMessage())
+            ->setChannel($channel)
+            ->setAuthor($user);
+
+        // on sauvegarde le message en BDD
+        $this->manager->persist($message);
+        $this->manager->flush();
 
     }
 }

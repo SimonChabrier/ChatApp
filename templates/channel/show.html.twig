@@ -1,24 +1,46 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Channel{% endblock %}
 
 {% block body %}
-<div>
-    <h1>Home</h1>
-    {% if channels is defined and channels is not empty %}
-    {% for channel in channels %}
-        <a href="{{ path('app_channel_show', {id: channel.id}) }}">{{ channel.name }}</a>
-    {% endfor %}
-    {% else %}
-        <p>Il n'y a pas de channel</p>
-    {% endif %}
-</div>
+    <h1>Channel</h1>
 
-<div>
-<ul id="messages"></ul>
-</div>
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ channel.id }}</td>
+            </tr>
+            <tr>
+                <th>Name</th>
+                <td>{{ channel.name }}</td>
+            </tr>
+            <tr>
+                <th>CreatedAt</th>
+                <td>{{ channel.createdAt ? channel.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+            </tr>
+        </tbody>
+    </table>
 
-<div>
+    <a href="{{ path('app_channel_index') }}">back to list</a>
+
+    <a href="{{ path('app_channel_edit', {'id': channel.id}) }}">edit</a>
+
+    {{ include('channel/_delete_form.html.twig') }}
+
+    <div>
+        <h2>Messages</h2>
+        <p>Messages du channel {{ channel.name }}</p>
+        <ul id="messages">
+        {% for message in channel.messages %}
+            {% if message.channel.id == channel.id %}
+                <li>{{ message.content }}</li>
+            {% endif %}
+        {% endfor %}
+          </ul>
+    </div>
+
+    <div>
     <form action="">
         <fieldset>
         <legend>Message vers Mercure Hub & Retour en SSE</legend>
@@ -31,22 +53,24 @@
     </form>
 </div>
 
+
+
 {% block javascript %}
 <script>
 
 // On crée un nouvel objet EventSource, qui va se connecter au hub Mercure
 const link = 'https://mercure.simschab.cloud/.well-known/mercure';
 const url = new URL(link);
-url.searchParams.append('topic', 'montopic');
-url.searchParams.append('topic', 'montopicfront');
+url.searchParams.append('topic', encodeURIComponent("chat/{{ channel.id }}"));
+//url.searchParams.append('topic', "test");
+//url.searchParams.append('topic', 'montopicfront');
 const eventSource = new EventSource(url);
-
+console.log(eventSource);
 // On écoute les messages reçus du hub
 eventSource.onmessage = e => {
     console.log(e.data);
     // on fait ce qu'on veut avec le message reçu du hub
     const li = document.createElement('li');
-    // remove "data:" and "data:";charset=utf-8," from beginning of string
     li.textContent = e.data;
     document.getElementById('messages').appendChild(li);
 };
@@ -57,15 +81,19 @@ const submitToBack = document.getElementById('submitToBack');
 const dataText = document.getElementById('dataText');
 const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjdXJlIjp7InB1Ymxpc2giOlsiKiJdLCJzdWJzY3JpYmUiOlsiKiJdfX0.nINXJPMGL7u4vvquYYm3zgMosrqrxTSooTs7R_OJLZA'
 
-
 // on créer un objet data qui contient le topic et le message
+
 const data = {
-    topic: 'montopicfront',
-    mesage: dataText.value
+    topic: encodeURIComponent("chat/{{ channel.id }}"),
+    message: '',
+    channel_id: '{{ channel.id }}',
+    author: '{{ app.user.username }}',
+    author_id: '{{ app.user.id }}'
 }
 
 // on soumet le formulaire
 sbmtbtn.addEventListener('click', (e) => {
+    console.log(dataText.value);
     e.preventDefault();
     // on envoie le message au hub
     fetch('https://mercure.simschab.cloud/.well-known/mercure', {
@@ -85,6 +113,8 @@ sbmtbtn.addEventListener('click', (e) => {
     .then(response => response.text())
     .then(data => {
         console.log(data);
+        // on vide le champ de saisie
+        dataText.value = '';
     })
     .catch(error => console.log(error));
 });
@@ -93,10 +123,12 @@ sbmtbtn.addEventListener('click', (e) => {
 // envoir le message au controller Front To Back
 submitToBack.addEventListener('click', (e) => {
     e.preventDefault();
+    // on met à jour l'objet data avec le message saisi
+    data.message = dataText.value;
     // on envoie le message au hub
     fetch('/publish', {
         method: 'POST',
-        body: JSON.stringify(dataText.value)
+        body: JSON.stringify(data) 
      })
     .then(response => response.text())
     .then(data => {

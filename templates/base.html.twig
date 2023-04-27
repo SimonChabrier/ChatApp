@@ -28,6 +28,15 @@
     <body>
         {% block userinfo %}
         <div class="container">
+        
+        <nav>
+        <ul>
+            <li><a href="{{ path('app_home') }}">Home</a></li>
+            <li><a href="{{ path('app_channel_index') }}">Cannaux</a></li>
+        </ul>
+        </nav>
+
+
         {% if app.user.username is defined %}
             <p class="username">Connecté : {{ app.user.username }} / <a href="{{ path('app_logout') }}">Logout</a></p>
         {% else %}
@@ -35,6 +44,8 @@
         {% endif %}
         </div>
         {% endblock %}
+        <div class="container">
         {% block body %}{% endblock %}
+        </div>
     </body>
 </html>
