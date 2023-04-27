@@ -22,7 +22,7 @@ class ChannelController extends AbstractController
     public function index(ChannelRepository $channelRepository): Response
     {
         return $this->render('channel/index.html.twig', [
-            'channels' => $channelRepository->findAll(),
+            'channels' => $channelRepository->findBy([], ['name' => 'ASC']),
         ]);
     }
 

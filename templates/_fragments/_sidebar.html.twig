@@ -4,7 +4,7 @@
 </div>
 <div>
 {% if all_channels.getAllChannels() is not empty %}
-<ul>
+<ol>
 {% for channel in all_channels.getAllChannels() %}
     <li>
         <a href="{{ path('app_channel_show', {'id': channel.id}) }}">{{ channel.name }}</a>
@@ -18,6 +18,6 @@
         <a href="{{ path('app_channel_new') }}">Créer un nouveau chat</a>
     </li>
 {% endif %}
-</ul>
+</ol>
 </div>
 </aside>

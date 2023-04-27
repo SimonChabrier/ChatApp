@@ -42,6 +42,11 @@ class Channel
      */
     private $messages;
 
+    /**
+     * @ORM\Column(type="string", length=255)
+     */
+    private $description;
+
     public function __construct()
     {
         $this->messages = new ArrayCollection();
@@ -102,6 +107,18 @@ class Channel
                 $message->setChannel(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getDescription(): ?string
+    {
+        return $this->description;
+    }
+
+    public function setDescription(string $description): self
+    {
+        $this->description = $description;
 
         return $this;
     }

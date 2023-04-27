@@ -5,13 +5,6 @@
 {% block body %}
 <div>
     <h1>Home</h1>
-    {% if channels is defined and channels is not empty %}
-    {% for channel in channels %}
-        <a href="{{ path('app_channel_show', {id: channel.id}) }}">{{ channel.name }}</a>
-    {% endfor %}
-    {% else %}
-        <p>Il n'y a pas de channel</p>
-    {% endif %}
 </div>
 
 <div>

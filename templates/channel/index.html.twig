@@ -8,8 +8,8 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Id</th>
                 <th>Name</th>
+                <th>Description</th>
                 <th>CreatedAt</th>
                 <th>actions</th>
             </tr>
@@ -17,8 +17,8 @@
         <tbody>
         {% for channel in channels %}
             <tr>
-                <td>{{ channel.id }}</td>
                 <td>{{ channel.name }}</td>
+                <td>{{ channel.description }}</td>
                 <td>{{ channel.createdAt ? channel.createdAt|date('Y-m-d H:i:s') : '' }}</td>
                 <td>
                     <a href="{{ path('app_channel_show', {'id': channel.id}) }}">show</a>

@@ -24,7 +24,8 @@
     {% for message in channel.messages %}
         {% if message.channel.id == channel.id %}
             {% set style = message.author.username == app.user.username ? '#86b7b5' : '#4f6a69' %}
-            <div style="background-color: {{ style }}; margin: 10px auto; padding:20px; color:white;">
+            {% set float_side = message.author.username == app.user.username ? 'right' : 'left' %}
+            <div class="message" style="background-color: {{ style }}; float: {{ float_side }}; ">
                 {{ message.author.username }} - {{ message.content }}
             </div>
         {% endif %}
@@ -58,15 +59,16 @@ url.searchParams.append('topic', encodeURIComponent("chat/{{ channel.id }}"));
 const eventSource = new EventSource(url);
 
 eventSource.onmessage = e => { 
+    const messages = document.getElementById('messages');
     const div = document.createElement('div');
     // on récupère le message et on le parse en JSON pour pouvoir l'afficher dans le DOM.
     const data = JSON.parse(e.data);
     div.textContent = data.author + ' - ' + data.message;
+    div.classList.add('message');
+    div.style.float = data.author == '{{ app.user.username }}' ? 'right' : 'left';
     data.author == '{{ app.user.username }}' ? div.style.backgroundColor = '#86b7b5' : div.style.backgroundColor = '#4f6a69';
-    div.style.margin = '10px auto';
-    div.style.padding = '20px';
-    div.style.color = 'white';
-    document.getElementById('messages').appendChild(div);
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
 };
 
 /////////////////////////////////////////********* PUB ************////////////////////////////////////////////
@@ -105,6 +107,11 @@ submitToBack.addEventListener('click', (e) => {
     })
     .catch(error => console.log(error));
 });
+
+/////////////////////////////////////////********* INIT SCROLL ************////////////////////////////////////////////
+
+document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+
 
 </script>
 {% endblock %}
