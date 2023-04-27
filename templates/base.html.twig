@@ -28,21 +28,25 @@
     <body>
         {% block userinfo %}
         <div class="container">
-        
         <nav>
-        <ul>
-            <li><a href="{{ path('app_home') }}">Home</a></li>
-            <li><a href="{{ path('app_channel_index') }}">Cannaux</a></li>
-        </ul>
+        <div>
+            <ul>
+                <li><a href="{{ path('app_home') }}">Home</a></li>
+                <li><a href="{{ path('app_channel_index') }}">Canaux</a></li>
+            </ul>
+            </div>
+            <div>
+            <ul>
+                {% if app.user.username is defined %}
+                <li class="username">Connecté : {{ app.user.username }} / <a href="{{ path('app_logout') }}">Logout</a></li>
+                {% else %}
+                <li><a href="{{ path('app_login') }}">Se connecter</a></li>
+                {% endif %}
+            </ul>
+            </div>
         </nav>
-
-
-        {% if app.user.username is defined %}
-            <p class="username">Connecté : {{ app.user.username }} / <a href="{{ path('app_logout') }}">Logout</a></p>
-        {% else %}
-        <a href="{{ path('app_login') }}">Se connecter</a>
-        {% endif %}
-        </div>
+    </div>
+        
         {% endblock %}
         <div class="container">
         {% block body %}{% endblock %}

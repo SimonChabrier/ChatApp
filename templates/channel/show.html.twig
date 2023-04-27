@@ -3,82 +3,73 @@
 {% block title %}Channel{% endblock %}
 
 {% block body %}
-    <h1>Channel</h1>
+    
+    <div class="date">
+    <h1>Canal : {{ channel.name }}</h1>
+        <h5>Date de création - {{ channel.createdAt ? channel.createdAt | format_datetime('short', 'none', locale='fr') : '' }}</h5>
+    </div>
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Nom du canal</th>
-                <td>{{ channel.name }}</td>
-            </tr>
-            <tr>
-                <th>Date de création</th>
-                <td>{{ channel.createdAt ? channel.createdAt|date('Y-m-d H:i:s') : '' }}</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <a href="{{ path('app_channel_index') }}">Liste des canaux</a>
-    <a href="{{ path('app_channel_edit', {'id': channel.id}) }}">Mofidier</a>
-    {{ include('channel/_delete_form.html.twig') }}
-
+    <div class="btn-group" role="group" data-toggle="buttons">
+        <a href="{{ path('app_channel_index') }}" style="margin-right: 5px;"><button type="button" class="btn btn-primary">Canaux</button></a>
+        <a href="{{ path('app_channel_edit', {'id': channel.id}) }}" style="margin-right: 5px;"><button class="btn btn-primary">Modifier</button></a>
+        {{ include('channel/_delete_form.html.twig') }}
+    </div>
+<hr>
     <div>
         <h2>Messages</h2>
         <p>Messages du channel {{ channel.name }}</p>
-        <ul id="messages">
-        {% for message in channel.messages %}
-            {# si message.channel.id est égale à channel.id alors afficher le message #}
-            {% if message.channel.id == channel.id %}
-            {# si message.author.username est égale à app.user.username alors colorer en bleu sinon en rouge #}
-                {% if message.author.username == app.user.username %}
-                    <li style="color: blue">{{ message.author.username }} - {{ message.content }}</li>
-                {% else %}
-                    <li style="color: red">{{ message.author.username }} - {{ message.content }}</li>
-                {% endif %}
-            {% endif %}
-        {% endfor %}
-          </ul>
     </div>
 
+    <div id="messages">
+    {% for message in channel.messages %}
+        {% if message.channel.id == channel.id %}
+            {% set style = message.author.username == app.user.username ? '#86b7b5' : '#4f6a69' %}
+            <div style="background-color: {{ style }}; margin: 10px auto; padding:20px; color:white;">
+                {{ message.author.username }} - {{ message.content }}
+            </div>
+        {% endif %}
+    {% endfor %}
+    </div>
+<hr>
     <div>
-    <form action="">
-        <fieldset>
-        <legend>Message vers Mercure Hub & Retour en SSE</legend>
-        <input type="text" id="dataText">
-        <br>
-        <small>Envoyer vers mercure hub...</small>
-        </fieldset>
-        <button id="submitBtn" class="btn btn-success" type="submit">Envoyer</button>
-        <button id="submitToBack" class="btn btn-info" type="submit">Envoyer au controller</button>
-    </form>
-</div>
+        <form action="">
+            <fieldset>
+            <legend>Nouveau message</legend>
+            <input type="text" id="dataText" class="form-control" placeholder="bla bla bla ...">
+            <small>Envoyer vers mercure hub...</small>
+            </fieldset>
+            <button id="submitToBack" class="btn btn-success" type="submit">Envoyer</button>
+        </form>
+    </div>
 
 
 
 {% block javascript %}
 <script>
 
+/////////////////////////////////////////********* SUB ************////////////////////////////////////////////
+
 // On crée un nouvel objet EventSource, qui va se connecter au hub Mercure
 const link = 'https://mercure.simschab.cloud/.well-known/mercure';
+
 const url = new URL(link);
 url.searchParams.append('topic', encodeURIComponent("chat/{{ channel.id }}"));
-//url.searchParams.append('topic', "test");
-//url.searchParams.append('topic', 'montopicfront');
+
 const eventSource = new EventSource(url);
-console.log(eventSource);
-// On écoute les messages reçus du hub
-eventSource.onmessage = e => {
-    
-    const li = document.createElement('li');
+
+eventSource.onmessage = e => { 
+    const div = document.createElement('div');
     // on récupère le message et on le parse en JSON pour pouvoir l'afficher dans le DOM.
     const data = JSON.parse(e.data);
-    li.textContent = data.author + ' - ' + data.message // + ' - ' + new Date().toLocaleTimeString();
-    data.author == '{{ app.user.username }}' ? li.style.color = 'blue' : li.style.color = 'red';
-    console.log(data.author == '{{ app.user.username }}');
-    // ajouter aussi le user qui a envoyé le message
-    
-    document.getElementById('messages').appendChild(li);
+    div.textContent = data.author + ' - ' + data.message;
+    data.author == '{{ app.user.username }}' ? div.style.backgroundColor = '#86b7b5' : div.style.backgroundColor = '#4f6a69';
+    div.style.margin = '10px auto';
+    div.style.padding = '20px';
+    div.style.color = 'white';
+    document.getElementById('messages').appendChild(div);
 };
+
+/////////////////////////////////////////********* PUB ************////////////////////////////////////////////
 
 // On prépare l'envoi d'un message
 const sbmtbtn = document.getElementById('submitBtn');
@@ -95,35 +86,6 @@ const data = {
     author: '{{ app.user.username }}',
     author_id: '{{ app.user.id }}'
 }
-
-// on soumet le formulaire
-sbmtbtn.addEventListener('click', (e) => {
-    console.log(dataText.value);
-    e.preventDefault();
-    // on envoie le message au hub
-    fetch('https://mercure.simschab.cloud/.well-known/mercure', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': 'Bearer ' + `${TOKEN}` // inclure le cookie d'authentification dans l'en-tête Authorization si on ne passe pas par le backend
-                                                    // car en front on n'accède pas au token défini dans la configuration du hub dans le backend
-        },
-        // on encode le message et le topic en JSON dans le corps de la requête sur des clés data et topic
-        // en utilisant:  encodeURIComponent(...) on encode les caractères spéciaux si il y en a
-        // comme ça on est sur que les valeurs des paramètres sont correctement encodés et envoyés en tant que données de formulaire URL-encodées valides.
-        // même si ici c'est pas nécessaire car on envoie pas de caractères spéciaux.
-        // infos : https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
-        body: `data=${encodeURIComponent(dataText.value)}&topic=${encodeURIComponent(data.topic)}` // envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
-    })
-    .then(response => response.text())
-    .then(data => {
-        console.log(data);
-        // on vide le champ de saisie
-        dataText.value = '';
-    })
-    .catch(error => console.log(error));
-});
-
 
 // envoir le message au controller Front To Back
 submitToBack.addEventListener('click', (e) => {

@@ -1,3 +1,27 @@
 .username {
   color: #049409;
+  float: right;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+nav {
+  background-color: #f2f2f2;
+  padding: 20px;
+  margin: 15px 0 30px 0;
+  display: flex;
+  justify-content: space-between;
+}
+nav ul {
+  display: flex; flex-direction: row; padding: 0; margin: 0; list-style: none;
+}
+
+nav li {
+  margin-right: 15px;
+}
+
+nav a {
+  text-decoration: none !important;
 }
