@@ -65,6 +65,12 @@ sbmtbtn.addEventListener('click', (e) => {
         return;
     }
 
+    // check illegal characters
+    if (dataText.value.match(/[^a-zA-Z0-9 ]/)) {
+        alert('Please enter a valid message');
+        return;
+    }
+
     // on envoie le message au hub
     fetch('https://mercure.simschab.cloud/.well-known/mercure', {
         method: 'POST',

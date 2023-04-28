@@ -80,9 +80,12 @@ const data = {
 
 // envoir le message au controller Front To Back
 submitToBack.addEventListener('click', (e) => {
+    
     e.preventDefault();
+    
     // on met à jour l'objet data avec le message saisi
     data.message = dataText.value;
+    
     // on vérifie que le message n'est pas vide
     if (data.message == '') {
         // get .errors div and add error message to it on a smooth fade in and fade out
@@ -94,6 +97,12 @@ submitToBack.addEventListener('click', (e) => {
         }, 3000);
     return;
     }
+
+    // check illegal characters
+    if (dataText.value.match(/[^a-zA-Z0-9 ]/)) {
+        alert('Please enter a valid message');
+        return;
+    } 
 
     // on envoie le message au hub
     fetch('/publish', {
@@ -118,8 +127,6 @@ submitToBack.addEventListener('click', (e) => {
 // block spécifie l'alignement vertical de l'élément dans la fenêtre d'affichage, avec la valeur 'end' pour aligner le bas de l'élément avec le bas de la fenêtre.
 
 messages.lastElementChild.scrollIntoView({behavior: 'smooth', block: 'end'});
-
-
 
 </script>
 {% endblock %}
