@@ -81,13 +81,17 @@
 ///////////////// Channels notifications using mercure in a loop on all channels ////////////////
 
 // get id from url to know which channel is currently displayed
-const currentChannelId = {{ app.request.get('id') }};
+{% if app.request.get('id') is not null %}
+    const currentChannelId = {{ app.request.get('id') }};
+{% else %}
+    const currentChannelId = null;
+{% endif %}
 
 {% if twig_globals.getGlobals()['all_channels'] is not empty %}
 
 {% for channel in twig_globals.getGlobals()['all_channels'] %}
     // Est ce que le channel actuellement affiché est différent de celui de la boucle ?
-    if ({{ channel.id }} !== currentChannelId) {
+    if ({{ channel.id }} !== currentChannelId || currentChannelId === null) {
         // on ajoute un event source pour chaque channel différent de celui actuellement affiché
         const notifSource{{ channel.id }} = new EventSource('https://mercure.simschab.cloud/.well-known/mercure?topic=channel/{{ channel.id }}');
         // on récupère la span qui contiendra le nombre de notif
