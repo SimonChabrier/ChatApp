@@ -8,8 +8,7 @@ mercure:
                 publish: '*'
                 subscribe: '*'
                 algorithm: HS256 # le format d'encodage du token utilisé par mercure et à la génération du token sur jwt.io avec la secret key. Si on change le format d'encodage du token il faut changer l'algorithm
-                # si je met le token directement je n'ai pas besoin de la secret kay parce que le token est déjà encodé avec la secret key. 
-                # Mais si je veux générer le token avec la secret key il faut décommnter la ligne secret et mettre la secret key dans la variable d'environnement MERCURE_JWT_SECRET
+                # si je met le token directement je n'ai pas besoin de la secret key parce que le token est déjà encodé avec la secret key. 
                 value: '%env(MERCURE_TOKEN)%'
 
 # EXEMPLE DE CONFIGURATION FOURNI PAR SYMFONY DOC
