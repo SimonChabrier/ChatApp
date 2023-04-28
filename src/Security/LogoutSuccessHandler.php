@@ -40,6 +40,7 @@ class LogoutSuccessHandler extends AbstractController implements LogoutSuccessHa
         $this->em->persist($user);
         $this->em->flush();
 
+        // on crée un objet Update qui contient le nom du topic et les données à publier
         $update = new Update(
             'user_disconnected',
             json_encode([
@@ -47,7 +48,7 @@ class LogoutSuccessHandler extends AbstractController implements LogoutSuccessHa
                 'status' => "offline", 
                 'user_id' => $user->getId()])
             );
-        
+        // on publie l'objet Update dans le hub qui va ensuite envoyer les données aux clients abonnés
         $this->hub->publish($update);
 
         return $this->redirectToRoute('app_home');

@@ -1,6 +1,6 @@
 <aside>
 <div>
-<h2>Chats</h2>
+    <h2>Chats</h2>
 </div>
 
 {# on ajoute la liste des utilisateurs connectés #}
@@ -20,37 +20,39 @@
 
 
 <div>
-
 {% if twig_globals.getGlobals()['all_channels'] is not empty %}
-<ul>
-{% for channel in twig_globals.getGlobals()['all_channels'] %}
-    <li>
-        <a href="{{ path('app_channel_show', {'id': channel.id}) }}">{{ channel.name }}</a>
-        <span id="notifIcon"></span> 
-        {# on prepare une span pour le nombre de notif...à gèrer en js 
-        et renvoyer les notifs depuis le controller...#}
-    </li>
-{% endfor %}
-{% else %}
-    <li>
-        <a href="{{ path('app_channel_new') }}">Créer un nouveau chat</a>
-    </li>
-{% endif %}
-</ul>
+    <ul>
+    {% for channel in twig_globals.getGlobals()['all_channels'] %}
+        <li>
+            <a href="{{ path('app_channel_show', {'id': channel.id}) }}">{{ channel.name }}</a>
+            <span id="notifIcon"></span> 
+            {# on prepare une span pour le nombre de notif...à gèrer en js 
+            et renvoyer les notifs depuis le controller...#}
+        </li>
+    {% endfor %}
+    {% else %}
+        <li>
+            <a href="{{ path('app_channel_new') }}">Créer un nouveau chat</a>
+        </li>
+    {% endif %}
+    </ul>
 </div>
 </aside>
 
 {% block javascripts %}
 
 <script>
+    /////////////////
     const topicslink = new URL('https://mercure.simschab.cloud/.well-known/mercure');
     topicslink.searchParams.append('topic', encodeURIComponent('user_connected'));
     topicslink.searchParams.append('topic', encodeURIComponent('user_disconnected'));
-
-    console.log(topicslink);
+    // on peut imaginer ajouter d'autres topics pour les messages, les channels, etc...
+    topicslink.searchParams.append('topic', encodeURIComponent('channel_created'));
+    topicslink.searchParams.append('topic', encodeURIComponent('channel_deleted'));
+    topicslink.searchParams.append('topic', encodeURIComponent('channel_updated'));
+    topicslink.searchParams.append('topic', encodeURIComponent('message_created'));
 
     const usersEventSource = new EventSource(topicslink);
-
 
     const usersConnectedList = document.querySelector('.user_connected_list');
     console.log(usersConnectedList);
@@ -64,8 +66,8 @@
             // and a direct request from mercure to update the list when a user connect or disconnect
             // check fist if the user is already in the list for not adding it twice in the list
 
-            // si on change de page ou en arrivant sur l'interface on va avoir la liste des utilisateurs de la varibale globale twig
-            // donc on ne veut pas faire de doublon avec la liste des utilisateurs qui se connectent
+            // si on change de page ou en arrivant sur l'interface on va avoir la liste des utilisateurs connectés via la varibale globale twig et la requete en bdd
+            // donc on ne veut pas faire de doublon avec la liste des utilisateurs qui se connectent et aussi ne pas perdre les utilisateurs qui se connectent si on change de page...
             const liAlreadyInList = usersConnectedList.querySelector(`li[data-id="${data.user_id}"]`);
             if (liAlreadyInList) {
                 return;
@@ -82,14 +84,6 @@
     };
 
     /////////////////
-
-///////// 1 on crée un topic mercure pour liter les utilisateurs qui se connecte et un topic pour écouter les utilisateurs qui se déconnectent en utilisant un id //////
-
-
-
-
-
-
 
 </script>
 
