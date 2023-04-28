@@ -34,10 +34,10 @@ class SseController extends AbstractController
         // donc c'est lui qui va gérer l'envoi des données aux clients sans bloquer le serveur de cette app.
         // et qu'on a besoin de récupérer la réponse pour l'afficher dans la vue tout de suite.
         // Pas besoin de lancer de worker pour le bus en synchrone et pas besoin de table dans la BDD pour les messages.
-        $bus->dispatch(new Mercure($data['topic'],filter_var($data['message'], FILTER_SANITIZE_STRING),  $user->getUserIdentifier()));
+        $bus->dispatch(new Mercure($data['topic'],htmlspecialchars($data['message']),  $user->getUserIdentifier()));
 
         // maintenant on dipsatche en asynchrone pour gèrer le stockage des messages en BDD
-        $bus->dispatch(new Chat(filter_var($data['message'], FILTER_SANITIZE_STRING), (int) $data['channel_id'], (int) $data['author_id']));
+        $bus->dispatch(new Chat(htmlspecialchars($data['message']), (int) $data['channel_id'], (int) $data['author_id']));
 
         return new JsonResponse([
             'topic' => $data['topic'],
