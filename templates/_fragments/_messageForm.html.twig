@@ -1,0 +1,9 @@
+<div>
+    {{ form_start(messageform) }}
+    {{ form_widget(messageform) }}
+    <div class="errors"></div>
+    <button class="btn btn-success" id="submitToBack">
+        {{ button_label|default('Envoyer') }}
+    </button>
+    {{ form_end(messageform) }}
+</div>

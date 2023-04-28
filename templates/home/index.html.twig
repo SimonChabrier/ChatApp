@@ -15,7 +15,7 @@
     <form action="">
         <fieldset>
         <legend>Post a text message</legend>
-        <input type="text" id="dataText" required>
+        <input type="text" id="dataText" required >
         <br>
         <small>Test the Mercure hub communication...</small>
         </fieldset>
@@ -58,6 +58,13 @@ const data = {
 // on soumet le formulaire
 sbmtbtn.addEventListener('click', (e) => {
     e.preventDefault();
+
+    // check if message is empty or not
+    if (dataText.value === '') {
+        alert('Please enter a message');
+        return;
+    }
+
     // on envoie le message au hub
     fetch('https://mercure.simschab.cloud/.well-known/mercure', {
         method: 'POST',

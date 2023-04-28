@@ -32,18 +32,7 @@
     {% endfor %}
     </div>
 <hr>
-    <div>
-        <form action="">
-            <fieldset>
-            <legend>New message</legend>
-            <input type="text" id="dataText" class="form-control" placeholder="bla bla bla ..." required>
-            <small>Send...</small>
-            </fieldset>
-            <button id="submitToBack" class="btn btn-success" type="submit">Envoyer</button>
-        </form>
-    </div>
-
-
+    {{ include('_fragments/_messageForm.html.twig') }}
 
 {% block javascript %}
 <script>
@@ -76,7 +65,7 @@ eventSource.onmessage = e => {
 // On prépare l'envoi d'un message
 const sbmtbtn = document.getElementById('submitBtn');
 const submitToBack = document.getElementById('submitToBack');
-const dataText = document.getElementById('dataText');
+const dataText = document.getElementById('message_content');
 const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjdXJlIjp7InB1Ymxpc2giOlsiKiJdLCJzdWJzY3JpYmUiOlsiKiJdfX0.nINXJPMGL7u4vvquYYm3zgMosrqrxTSooTs7R_OJLZA'
 
 // on créer un objet data qui contient le topic et le message
@@ -94,6 +83,18 @@ submitToBack.addEventListener('click', (e) => {
     e.preventDefault();
     // on met à jour l'objet data avec le message saisi
     data.message = dataText.value;
+    // on vérifie que le message n'est pas vide
+    if (data.message == '') {
+        // get .errors div and add error message to it on a smooth fade in and fade out
+        const errors = document.querySelector('.errors');
+        errors.style.display = 'block';
+        errors.innerHTML = '<div class="alert alert-danger" role="alert">Le message ne peut pas être vide</div>';
+        setTimeout(() => {
+            errors.innerHTML = '';
+        }, 3000);
+    return;
+    }
+
     // on envoie le message au hub
     fetch('/publish', {
         method: 'POST',

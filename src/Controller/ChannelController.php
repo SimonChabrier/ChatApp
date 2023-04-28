@@ -4,12 +4,13 @@ namespace App\Controller;
 
 use App\Entity\Channel;
 use App\Form\ChannelType;
+use App\Form\MessageType;
 use App\Repository\ChannelRepository;
 use App\Repository\MessageRepository;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 /**
  * @Route("/channel")
@@ -58,6 +59,7 @@ class ChannelController extends AbstractController
         return $this->render('channel/show.html.twig', [
             'channel' => $channel,
             'messages' => $messages,
+            'messageform' => $this->createForm(MessageType::class, null)->createView(),
         ]);
     }
 
