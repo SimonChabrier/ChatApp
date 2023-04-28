@@ -88,7 +88,7 @@ input {
 
 #messages {
   max-height: 50%;
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 .message {
   margin: 10px auto; 
