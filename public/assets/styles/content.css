@@ -105,3 +105,26 @@ input {
   margin: 0;
   color: green;
 }
+
+
+.notifList li {
+  position: relative!important;
+}
+.notifCount {
+  background-color: green;
+  color: white;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: -5px;
+  right: 0px;
+  font-size: 12px;
+}
+
+.hideElement {
+  display: none;
+}

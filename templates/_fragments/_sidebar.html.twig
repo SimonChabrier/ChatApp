@@ -21,11 +21,11 @@
 
 <div>
 {% if twig_globals.getGlobals()['all_channels'] is not empty %}
-    <ul>
+    <ul class="notifList">
     {% for channel in twig_globals.getGlobals()['all_channels'] %}
         <li>
             <a href="{{ path('app_channel_show', {'id': channel.id}) }}">{{ channel.name }}</a>
-            <span id="notifCount_{{ channel.id }}" data-count=0></span>
+            <span class="notifCount" id="notifCount_{{ channel.id }}" data-count=0></span>
             {# on prepare une span pour le nombre de notif...à gèrer en js 
             et renvoyer les notifs depuis le controller...#}
         </li>
@@ -105,6 +105,7 @@
             count += data.count;
             notifCount{{ channel.id }}.textContent = count;
             notifCount{{ channel.id }}.setAttribute('data-count', count);
+            notifCount{{ channel.id }}.classList.remove('hideElement');
             // on stocke le nombre de notif dans le local storage pour pouvoir le récupérer si on change de page
             localStorage.setItem('notifCount_{{ channel.id }}', count);
         };
@@ -123,8 +124,10 @@
         
         if (currentNotifCount > 0) {
             notifCount{{ channel.id }}.textContent = currentNotifCount;
+            notifCount{{ channel.id }}.classList.remove('hideElement');
         } else {
             notifCount{{ channel.id }}.textContent = '';
+            notifCount{{ channel.id }}.classList.add('hideElement');
         }
     }
 {% endfor %}
@@ -138,10 +141,11 @@ channelLinks.forEach((link) => {
         // on met le compteur du channel à 0 dans le local storage au clic sur le lien du channel
         notifCount.setAttribute('data-count', 0);
         localStorage.setItem(notifCount.id, 0);
-        
         notifCount.textContent = '';
+        notifCount.classList.add('hideElement');
     });
 });
+
 
 
 
