@@ -3,6 +3,10 @@
 namespace App\Security;
 
 use App\Entity\User;
+
+use Symfony\Component\Mercure\Update;
+use Symfony\Component\Mercure\HubInterface;
+
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -16,13 +20,13 @@ use Symfony\Component\Security\Http\Logout\LogoutSuccessHandlerInterface;
 
 class LogoutSuccessHandler extends AbstractController implements LogoutSuccessHandlerInterface
 {
-    private $userRepository;
-    private $em;
+    private EntityManagerInterface $em;
+    private HubInterface $hub;
 
-    public function __construct(UserRepository $userRepository, EntityManagerInterface $em)
+    public function __construct(EntityManagerInterface $em, HubInterface $hub)
     {
-        $this->userRepository = $userRepository;
         $this->em = $em;
+        $this->hub = $hub;
     }
     public function onLogoutSuccess(Request $request): Response
     {   
@@ -35,6 +39,16 @@ class LogoutSuccessHandler extends AbstractController implements LogoutSuccessHa
         
         $this->em->persist($user);
         $this->em->flush();
+
+        $update = new Update(
+            'user_disconnected',
+            json_encode([
+                'username' => $user->getUserIdentifier(), 
+                'status' => "offline", 
+                'user_id' => $user->getId()])
+            );
+        
+        $this->hub->publish($update);
 
         return $this->redirectToRoute('app_home');
 
