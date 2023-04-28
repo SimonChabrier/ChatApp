@@ -1,4 +1,8 @@
-# Multichannel Chat MVP project with Mercure
+# Real Time Multichannel Chat (MVP_version)
+
+- Symfony 5.4
+- Mercure Hub
+
 ## Avril 2023
 
 ## Try the app
