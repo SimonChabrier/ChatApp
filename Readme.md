@@ -1,6 +1,7 @@
-# En cours de rédaction 25 Avril 2023
 
-## Multichannel Chat MVP project with Mercure
+
+# Multichannel Chat MVP project with Mercure
+## Avril 2023
 
 User may be registered to the app. They can create channels and chat in them. 
 Messages are sent in real time using Mercure.
