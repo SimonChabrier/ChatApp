@@ -1,7 +1,9 @@
-
-
 # Multichannel Chat MVP project with Mercure
 ## Avril 2023
+
+## Try the app
+https://chat.simschab.cloud/
+
 
 User may be registered to the app. They can create channels and chat in them. 
 Messages are sent in real time using Mercure.
