@@ -4,7 +4,7 @@
 
 {% block body %}
 <div>
-    <h1>Home</h1>
+    <h1>Test your Mercure Hub first</h1>
 </div>
 
 <div>
@@ -14,13 +14,12 @@
 <div>
     <form action="">
         <fieldset>
-        <legend>Message vers Mercure Hub & Retour en SSE</legend>
-        <input type="text" id="dataText">
+        <legend>Post a text message</legend>
+        <input type="text" id="dataText" required>
         <br>
-        <small>Envoyer vers mercure hub...</small>
+        <small>Test the Mercure hub communication...</small>
         </fieldset>
-        <button id="submitBtn" class="btn btn-success" type="submit">Envoyer</button>
-        <button id="submitToBack" class="btn btn-info" type="submit">Envoyer au controller</button>
+        <button id="submitBtn" class="btn btn-success" type="submit">Send Front to Front - Message is not save</button>
     </form>
 </div>
 
@@ -30,7 +29,6 @@
 // On crée un nouvel objet EventSource, qui va se connecter au hub Mercure
 const link = 'https://mercure.simschab.cloud/.well-known/mercure';
 const url = new URL(link);
-url.searchParams.append('topic', 'montopic');
 url.searchParams.append('topic', 'montopicfront');
 const eventSource = new EventSource(url);
 
@@ -78,24 +76,6 @@ sbmtbtn.addEventListener('click', (e) => {
     .then(response => response.text())
     .then(data => {
         console.log(data);
-    })
-    .catch(error => console.log(error));
-});
-
-
-// envoir le message au controller Front To Back
-submitToBack.addEventListener('click', (e) => {
-    e.preventDefault();
-    // on envoie le message au hub
-    fetch('/publish', {
-        method: 'POST',
-        body: JSON.stringify(dataText.value)
-     })
-    .then(response => response.text())
-    .then(data => {
-        console.log(data);
-        // on vide le champ de saisie
-        dataText.value = '';
     })
     .catch(error => console.log(error));
 });
