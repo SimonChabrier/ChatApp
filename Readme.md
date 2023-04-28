@@ -48,12 +48,12 @@ MERCURE_PUBLIC_URL=http://localhost/.well-known/mercure
 #MERCURE_JWT_SECRET=!ChangeThisMercureHubJWTSecretKey!
 MERCURE_TOKEN='GO_TO_JWT.IO_AND_GENERATE_A_TOKEN_USING_THIS_SECRET_KEY'
 ###< mercure ###
+```
 
-- create the token : 
+- Follow this [link to create your token](https://jwt.io/#debugger-io?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjdXJlIjp7InB1Ymxpc2giOlsiKiJdfX0.iHLdpAEjX4BqCsHJEegxRmO-Y6sMxXwNATrQyRNt3GY) 
 
-https://jwt.io/#debugger-io?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjdXJlIjp7InB1Ymxpc2giOlsiKiJdfX0.iHLdpAEjX4BqCsHJEegxRmO-Y6sMxXwNATrQyRNt3GY
 
-paste this secret key : `!ChangeThisMercureHubJWTSecretKey!` in "VERIFY SIGNATURE" input.
+- paste this secret key : `!ChangeThisMercureHubJWTSecretKey!` in "VERIFY SIGNATURE" input.
 and paste this payload : 
 
 ```shell
@@ -81,7 +81,7 @@ MERCURE_TOKEN='pasteyourtokenhere'
 
 ## Install the dependencies and create the database
 
-``shell
+```shell
 composer install
 php bin/console doctrine:database:create
 php bin/console doctrine:migrations:migrate
