@@ -50,6 +50,7 @@ MERCURE_TOKEN='GO_TO_JWT.IO_AND_GENERATE_A_TOKEN_USING_THIS_SECRET_KEY'
 ###< mercure ###
 
 - create the token : 
+
 https://jwt.io/#debugger-io?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjdXJlIjp7InB1Ymxpc2giOlsiKiJdfX0.iHLdpAEjX4BqCsHJEegxRmO-Y6sMxXwNATrQyRNt3GY
 
 paste this secret key : `!ChangeThisMercureHubJWTSecretKey!` in "VERIFY SIGNATURE" input.
@@ -68,19 +69,19 @@ and paste this payload :
 }
 ```
 
-- click to generate the token and copy it in the .env.local file on:
+- click to generate the token go back to your Symfony app and copy it in the .env.local file at the following line:
 
 ```
 MERCURE_TOKEN='pasteyourtokenhere'
 ```
 
-- update js script in home/index.html.twig and channel/show.html.twig with your mercure hub url : `http://localhost/.well-known/mercure`
+- update js script in home/index.html.twig and channel/show.html.twig with your mercure hub url : 
+- `http://localhost/.well-known/mercure`
 
-```shell
 
 ## Install the dependencies and create the database
 
-```shell
+``shell
 composer install
 php bin/console doctrine:database:create
 php bin/console doctrine:migrations:migrate
