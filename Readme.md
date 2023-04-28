@@ -129,3 +129,49 @@ bin/console messenger:consume async
 - [Mercure](https://mercure.rocks/docs/hub/install)
 - [Caddy - The server used by the MercureHub](https://caddyserver.com/docs/)
 - [Symfony](https://symfony.com/doc/current/mercure.html)
+
+## Bonus create a systemd service to run the messenger worker (ubuntu)
+
+- Crete the service file :
+
+```shell
+sudo nano /etc/systemd/system/my-messenger-worker.service
+```
+
+- Add the following content in the file :
+
+```
+[Unit]
+Description=My Personnal Messenger worker
+
+[Service]
+User=www-data
+Group=www-data
+Restart=always
+ExecStart=php /var/www/html/NAME_OF_YOUR_APP_DIRECTORY_HERE/bin/console messenger:consume async -vv --time-limit=3600
+TimeoutStopSec=3600
+
+[Install]
+WantedBy=multi-user.target
+```
+
+- Restart systemd :
+
+```
+sudo systemctl daemon-reload
+sudo systemctl restart my-messenger-worker.service
+```
+
+- Check the status of the service :
+
+```
+sudo systemctl status my-messenger-worker.service
+```
+
+- Enable the service to start at boot :
+
+```
+sudo systemctl enable my-messenger-worker.service
+```
+
+- finsih the worker will start at boot and will restart if it crash and always run in background to persist the messages in database asynchroneously.
