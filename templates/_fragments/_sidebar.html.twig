@@ -25,7 +25,7 @@
     {% for channel in twig_globals.getGlobals()['all_channels'] %}
         <li>
             <a href="{{ path('app_channel_show', {'id': channel.id}) }}">{{ channel.name }}</a>
-            <span id="notifIcon"></span> 
+            <span id="notifCount_{{ channel.id }}" data-count=0></span>
             {# on prepare une span pour le nombre de notif...à gèrer en js 
             et renvoyer les notifs depuis le controller...#}
         </li>
@@ -46,12 +46,7 @@
     const topicslink = new URL('https://mercure.simschab.cloud/.well-known/mercure');
     topicslink.searchParams.append('topic', encodeURIComponent('user_connected'));
     topicslink.searchParams.append('topic', encodeURIComponent('user_disconnected'));
-    // on peut imaginer ajouter d'autres topics pour les messages, les channels, etc...
-    topicslink.searchParams.append('topic', encodeURIComponent('channel_created'));
-    topicslink.searchParams.append('topic', encodeURIComponent('channel_deleted'));
-    topicslink.searchParams.append('topic', encodeURIComponent('channel_updated'));
-    topicslink.searchParams.append('topic', encodeURIComponent('message_created'));
-
+    // on peut imaginer ajouter d'autres topics pour les messages, les channels, etc...    
     const usersEventSource = new EventSource(topicslink);
 
     const usersConnectedList = document.querySelector('.user_connected_list');
@@ -83,10 +78,70 @@
         }
     };
 
-    /////////////////
+///////////////// Channels notifications using mercure in a loop on all channels ////////////////
+
+// get id from url to know which channel is currently displayed
+const currentChannelId = {{ app.request.get('id') }};
+
+{% if twig_globals.getGlobals()['all_channels'] is not empty %}
+
+{% for channel in twig_globals.getGlobals()['all_channels'] %}
+    // Est ce que le channel actuellement affiché est différent de celui de la boucle ?
+    if ({{ channel.id }} !== currentChannelId) {
+        // on ajoute un event source pour chaque channel différent de celui actuellement affiché
+        const notifSource{{ channel.id }} = new EventSource('https://mercure.simschab.cloud/.well-known/mercure?topic=channel/{{ channel.id }}');
+        // on récupère la span qui contiendra le nombre de notif
+        const notifCount{{ channel.id }} = document.getElementById('notifCount_{{ channel.id }}');
+        
+        // on écoute les messages envoyés par mercure
+        notifSource{{ channel.id }}.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            let count = parseInt(notifCount{{ channel.id }}.getAttribute('data-count')) || 0;
+            // on incrémente le nombre de notif
+            count += data.count;
+            notifCount{{ channel.id }}.textContent = count;
+            notifCount{{ channel.id }}.setAttribute('data-count', count);
+            // on stocke le nombre de notif dans le local storage pour pouvoir le récupérer si on change de page
+            localStorage.setItem('notifCount_{{ channel.id }}', count);
+        };
+    }
+{% endfor %}
+{% endif %}
+
+// on récupère le nombre de notif stocké dans le local storage pour l'afficher si on change de page
+
+{% for channel in twig_globals.getGlobals()['all_channels'] %}
+    let notifCount{{ channel.id }} = document.getElementById('notifCount_{{ channel.id }}');
+    if (notifCount{{ channel.id }} !== null) {
+        let totalNotifCount = parseInt(localStorage.getItem('notifCount_{{ channel.id }}')) || 0;
+        let eventSourceNotifCount = parseInt(notifCount{{ channel.id }}.getAttribute('data-count')) || 0;
+        let currentNotifCount = totalNotifCount - eventSourceNotifCount;
+        
+        if (currentNotifCount > 0) {
+            notifCount{{ channel.id }}.textContent = currentNotifCount;
+        } else {
+            notifCount{{ channel.id }}.textContent = '';
+        }
+    }
+{% endfor %}
+
+// on met le compteur du channel à 0 quand l'utilisateur clique sur le lien du channel
+const channelLinks = document.querySelectorAll('a[href*="channel"]');
+
+channelLinks.forEach((link) => {
+    link.addEventListener('click', (e) => {
+        const notifCount = e.target.nextElementSibling; // le span qui contient le nombre de notif
+        // on met le compteur du channel à 0 dans le local storage au clic sur le lien du channel
+        notifCount.setAttribute('data-count', 0);
+        localStorage.setItem(notifCount.id, 0);
+        
+        notifCount.textContent = '';
+    });
+});
+
+
+
 
 </script>
-
-
 {% endblock %}
 

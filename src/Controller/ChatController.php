@@ -10,8 +10,10 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Mercure\Update;
+use Symfony\Component\Mercure\HubInterface;
 
-class LIveMessageController extends AbstractController
+class ChatController extends AbstractController
 {   
 
     /**
@@ -23,7 +25,8 @@ class LIveMessageController extends AbstractController
      */
     public function getMessage(
             MessageBusInterface $bus,
-            Request $request
+            Request $request,
+            HubInterface $hub
             ): Response
     {   
         $data = json_decode(
@@ -49,12 +52,25 @@ class LIveMessageController extends AbstractController
             (int) $data['author_id'])
         );
 
+        // notification du channel en cas de nouveau message
+        $update = new Update(
+            'channel/' . (int) $data['channel_id'],
+            json_encode([
+                'notification_message' => 'Nouveau message dans le channel ' . $data['topic'],
+                'count' => 1,
+            ])
+        );
+        
+        // on envoie la notification du channel pour chaque message sur son topic
+        $hub->publish($update);
+
         return new JsonResponse([
             'topic' => $data['topic'],
             'message' => $data['message'],
             'channel_id' => (int) $data['channel_id'],
             'author' => $data['author'],
             'author_id' => (int) $data['author_id'],
+            'count' => 1,
         ]);
     }
 }
