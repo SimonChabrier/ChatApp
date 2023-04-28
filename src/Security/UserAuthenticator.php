@@ -56,15 +56,12 @@ class UserAuthenticator extends AbstractLoginFormAuthenticator
     {
         if ($targetPath = $this->getTargetPath($request->getSession(), $firewallName)) {
 
-            // get the user by authenticating token
+            // get the user by authenticating token and update the user status
             $user = $token->getUser();  
-            // set user online status to 1
-            $user->setOnline(1);
-            // get the current value og login_count and add +1
-            $user->setLoginCount($user->getLoginCount() + 1);
-            // set the last login date to now
-            $user->setLastConnection(new \DateTime());
-            // save the changes
+            
+            $user->setOnline(1)
+                ->setLoginCount($user->getLoginCount() + 1)
+                ->setLastConnection(new \DateTime());
 
             $this->em->persist($user);
             $this->em->flush();

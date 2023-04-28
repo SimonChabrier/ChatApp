@@ -15,6 +15,6 @@ framework:
 
         routing:
             # Retourne les messages directement au client
-            App\Message\Mercure: sync
+            App\Message\MercureMessage: sync
             # persiste les messages dans la base de données
-            App\Message\Chat: async
+            App\Message\ChatMessage: async

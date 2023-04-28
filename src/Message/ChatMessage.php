@@ -2,10 +2,8 @@
 
 namespace App\Message;
 
-final class Chat
+final class ChatMessage
 {   
-    //TODO : à décommenter pour sauvegarder les messages en BDD
-
     private $message;
     private $channel;
     private $author;

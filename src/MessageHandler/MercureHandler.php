@@ -2,7 +2,7 @@
 
 namespace App\MessageHandler;
 
-use App\Message\Mercure;
+use App\Message\MercureMessage;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
 use Symfony\Component\Messenger\Handler\MessageHandlerInterface;
@@ -16,7 +16,7 @@ final class MercureHandler implements MessageHandlerInterface
         $this->hub = $hub;
     }
 
-    public function __invoke(Mercure $message)
+    public function __invoke(MercureMessage $message)
     {   
         // on crée un objet JSON qui contient les données à publier et retourner en JSON au frontend tout de suite après pour l'afficher.
         $data = json_encode([

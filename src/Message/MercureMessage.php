@@ -2,7 +2,7 @@
 
 namespace App\Message;
 
-final class Mercure
+final class MercureMessage
 {
 
     private $topic;
