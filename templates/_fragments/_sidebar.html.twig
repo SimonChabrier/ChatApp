@@ -3,15 +3,27 @@
 <h2>Chats</h2>
 </div>
 
-<div>
-    <ul class ="user_connected_list"></ul>
+{# on ajoute la liste des utilisateurs connectés #}
+<div class="mb-3">
+{% if twig_globals.getGlobals()['online_users'] is not empty %}
+    <ul class ="user_connected_list">
+    {% for online_user in twig_globals.getGlobals()['online_users'] %}
+        <li data-id={{ online_user.id  }}>{{ online_user.username }} : online</li>
+    {% endfor %}
+    {% else %}
+    <li>
+        Aucun utilisateur connecté
+    </li>
+{% endif %}
+    </ul>
 </div>
 
 
 <div>
-{% if all_channels.getAllChannels() is not empty %}
-<ol>
-{% for channel in all_channels.getAllChannels() %}
+
+{% if twig_globals.getGlobals()['all_channels'] is not empty %}
+<ul>
+{% for channel in twig_globals.getGlobals()['all_channels'] %}
     <li>
         <a href="{{ path('app_channel_show', {'id': channel.id}) }}">{{ channel.name }}</a>
         <span id="notifIcon"></span> 
@@ -24,7 +36,7 @@
         <a href="{{ path('app_channel_new') }}">Créer un nouveau chat</a>
     </li>
 {% endif %}
-</ol>
+</ul>
 </div>
 </aside>
 
@@ -47,6 +59,18 @@
         const data = JSON.parse(e.data);
         console.log(data);
         if (data.status === 'online') {
+
+            // cause we have boot a request from users status in database to not clear list on page change 
+            // and a direct request from mercure to update the list when a user connect or disconnect
+            // check fist if the user is already in the list for not adding it twice in the list
+
+            // si on change de page ou en arrivant sur l'interface on va avoir la liste des utilisateurs de la varibale globale twig
+            // donc on ne veut pas faire de doublon avec la liste des utilisateurs qui se connectent
+            const liAlreadyInList = usersConnectedList.querySelector(`li[data-id="${data.user_id}"]`);
+            if (liAlreadyInList) {
+                return;
+            }
+
             const li = document.createElement('li');
             li.textContent = data.username + ' : ' + data.status;
             li.dataset.id = data.user_id;

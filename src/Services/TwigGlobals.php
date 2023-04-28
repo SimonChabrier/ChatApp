@@ -3,9 +3,10 @@
 namespace App\Services;
 
 use App\Entity\Channel;
+use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 
-class Channels
+class TwigGlobals
 {
     private $em;
 
@@ -18,8 +19,15 @@ class Channels
     // déclaré dans twig comme un service injecté dans une variable 'channels' rendue globale..(voir config/twig.yaml)
     // la méthode est ensuite appellée dans twig comme ceci: {% for channel in channels.getChannels() %}  ...
     
-    public function getAllChannels()
+    public function getGlobals()
     {   
-        return $this->em->getRepository(Channel::class)->findAll();
+        $all_channels = $this->em->getRepository(Channel::class)->findAll();
+        $online_users = $this->em->getRepository(User::class)->findBy(['online' => 1]);
+
+        return [
+            'all_channels' => $all_channels,
+            'online_users' => $online_users
+        ];
     }
+
 }
