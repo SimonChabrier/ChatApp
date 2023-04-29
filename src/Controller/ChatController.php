@@ -10,11 +10,14 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Mercure\Update;
-use Symfony\Component\Mercure\HubInterface;
+
 
 class ChatController extends AbstractController
 {   
+
+    // dans cette classe on utilise messenger pour dispatcher les messages dans le bus
+    // on a un diptach synchrone (MercureMessage & MercureHandler) pour le hub mercure
+    // et un dispatch asynchrone (ChatMessage & ChatHandler) pour le handler qui stocke les messages en BDD
 
     /**
      * Route qui récupère les données du formulaire les dipatche dans le bus
@@ -25,8 +28,7 @@ class ChatController extends AbstractController
      */
     public function getMessage(
             MessageBusInterface $bus,
-            Request $request,
-            HubInterface $hub
+            Request $request
             ): Response
     {   
         $data = json_decode(
@@ -53,17 +55,19 @@ class ChatController extends AbstractController
         );
 
         // notification du channel en cas de nouveau message
-        $update = new Update(
+        // dispatch en synchrone car on a besoin de la réponse pour l'afficher dans la vue tout de suite
+        $bus->dispatch(new MercureMessage(
             'channel/' . (int) $data['channel_id'],
             json_encode([
-                'notification_message' => 'Nouveau message dans le channel ' . $data['topic'],
-                'count' => 1,
-            ])
+                // message non utilisé pour l'instant
+                'notification_message' => 'Nouveau message dans le channel ' . $data['topic']
+            ]),
+            $user->getUserIdentifier())
         );
         
-        // on envoie la notification du channel pour chaque message sur son topic
-        $hub->publish($update);
-
+        // on se retourne les infos pour les exploiter au besoin dans la vue
+        // pour le moment on les console.log dans le fichier js juste pour vérifier
+        // parce que tout part et revient par le hub mercure et ce sont les données du hub qui sont affichées dans la vue.
         return new JsonResponse([
             'topic' => $data['topic'],
             'message' => $data['message'],

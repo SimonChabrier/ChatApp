@@ -1,6 +1,6 @@
 <aside>
 <div>
-    <h2>Chats</h2>
+    <h2>ChatRooms</h2>
 </div>
 
 {# on ajoute la liste des utilisateurs connectés #}
@@ -101,8 +101,8 @@
         notifSource{{ channel.id }}.onmessage = (event) => {
             const data = JSON.parse(event.data);
             let count = parseInt(notifCount{{ channel.id }}.getAttribute('data-count')) || 0;
-            // on incrémente le nombre de notif
-            count += data.count;
+            // on incrémente le nombre de notif avec la valeur retournée par mercure à la clé count
+            count += 1;
             notifCount{{ channel.id }}.textContent = count;
             notifCount{{ channel.id }}.setAttribute('data-count', count);
             notifCount{{ channel.id }}.classList.remove('hideElement');
