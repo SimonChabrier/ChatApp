@@ -14,6 +14,10 @@ class HomeController extends AbstractController
      */
     public function index(ChannelRepository $channelRepository): Response
     {   
+        if (!$this->getUser()) {
+            return $this->redirectToRoute('app_login');
+        }
+
         return $this->render('home/index.html.twig', [
             'channels' => $channelRepository->findAll(),
         ]);

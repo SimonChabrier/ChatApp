@@ -10,7 +10,8 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-
+use Symfony\Component\Mercure\HubInterface;
+use Symfony\Component\Mercure\Update;
 
 class ChatController extends AbstractController
 {   
@@ -78,4 +79,47 @@ class ChatController extends AbstractController
         ]);
     }
 
+    /**
+     * Route qui récupère les données des conversations privées du formulaire les dipatche dans le bus
+     * 
+     * @Route("/publish/private", name="app_publish_private")
+     */
+    public function getPrivateChannelMessage(
+            MessageBusInterface $bus,
+            Request $request,
+            HubInterface $hub
+            ): Response
+    {
+    $data = json_decode(
+        $request->getContent(),
+        true // getContent() récupère le body de la requête
+    );
+
+    $user = $this->getUser();
+
+    // Ici on dispatche en synchrone en interne car le hub Meruure est asynchrone par défaut de son côté
+    // donc c'est lui qui va gérer l'envoi des données aux clients sans bloquer le serveur de cette app.
+    // et qu'on a besoin de récupérer la réponse pour l'afficher dans la vue tout de suite.
+    // Pas besoin de lancer de worker pour le bus en synchrone et pas besoin de table dans la BDD pour les messages.
+    $update = new Update(
+        $data['topic'],
+        json_encode([
+            //'topic' => $data['topic'],
+            'message' => htmlspecialchars($data['message']),
+            'conversation_id' => (int) $data['conversation_id'],
+            //'author' => $data['author'],
+            'author_id' => (int) $data['author_id'],
+        ])
+    );
+
+    $hub->publish($update);
+
+        return new JsonResponse(
+            [
+                'message' => 'ok'
+            ]
+        );
+
+    }
+                
 }

@@ -39,9 +39,20 @@
 </div>
 </aside>
 
+
+{% if app.user is defined and app.user is not null %}
+
+
 {% block javascripts %}
 
+
+
 <script>
+
+
+
+    // check if the user is connected in the session as app.user or not
+
     /////////////////
     const topicslink = new URL('https://mercure.simschab.cloud/.well-known/mercure');
     topicslink.searchParams.append('topic', encodeURIComponent('user_connected'));
@@ -146,6 +157,21 @@ channelLinks.forEach((link) => {
     });
 });
 
+/////////////////////////////////////////********* SUB ************////////////////////////////////////////////
+// On crée un nouvel objet EventSource, qui va se connecter au hub Mercure
+function subscribe(id){
+    const link = 'https://mercure.simschab.cloud/.well-known/mercure';
+
+    const url = new URL(link);
+    url.searchParams.append('topic', encodeURIComponent(`conversation/${id}`));
+
+    const eventSource = new EventSource(url);
+    console.log(eventSource);
+    eventSource.onmessage = e => { 
+        console.log(e.data);
+    };
+}
+
 
 //////////////////// CONVERSATIONS PRIVEES //////////////////////
 
@@ -181,6 +207,7 @@ userList.forEach( user => {
       // Faire quelque chose avec les données récupérées
       // console.log(data.conversation);
       displayConversation(data.conversation);
+      subscribe(data.conversation.id);
     })
     .catch(error => {
       console.error(error);
@@ -196,7 +223,7 @@ function returnUserConversations(id) {
 
 // Récupérer l'ID de l'utilisateur en session
 function getUserConversations() {
-const userId = '{{ app.user.id }}';
+
     if (userId) {
         // Envoyer une requête fetch à la route /conversation avec l'ID de l'utilisateur en session
         fetch(`user/${userId}/conversation/`)
@@ -243,23 +270,114 @@ function getUserConversationsId(id) {
 
 ///////// PRIVATE MERCURE TOPIC BETWEN TWO USERS ///////////
 
-const privateTopicslink = new URL('https://mercure.simschab.cloud/.well-known/mercure');
-privateTopicslink.searchParams.append('topic', encodeURIComponent('private/' + conversation.id));
+//const privateTopicslink = new URL('https://mercure.simschab.cloud/.well-known/mercure');
+//privateTopicslink.searchParams.append('topic', encodeURIComponent('private/' + conversation.id));
 
 
 ///////// AFFICHAGE ET MISE A JOUR DE LA CONVERSATION ENTRE DEUX USER ///////////
  
 function displayConversation(conversation) {
+
     console.log(conversation);
 
-    // on récupère l'id de l'utilisateur en session
-    const sessionUserId = '{{ app.user.id }}';
-    // on récupère l'id de l'utilisateur avec qui on discute
-    const otherUserId = conversation.users.filter( user => user !== sessionUserId)[0];
-    // on récupère le nom de l'utilisateur avec qui on discute
+    const sessionUserId = parseInt('{{ app.user.id }}');
+    const sessionUserName = '{{ app.user.username }}';
+    console.log(`user en session : ${sessionUserId}`);
+    console.log(`nom du user en session : ${sessionUserName}`);
 
+    // on récupère l'id de l'utilisateur avec qui on discute
+    // récupèrer dans le tableau conversation.users l'id de l'utilisateur qui n'est pas égal à l'id de l'utilisateur en session sessionUserId
+    const otherUserId = conversation.users.find( user => parseInt(user.id) !== sessionUserId);
+    console.log(`participant : ${otherUserId.id}`);
+
+    // on récupère le nom de l'utilisateur avec qui on discute
+    const otherUserName = otherUserId.username;
+    console.log(`nom du participant : ${otherUserName}`);
+
+    // on récupère l'id de la conversation
+    const conversationId = conversation.id;
+    console.log(`conversation : ${conversationId}`);
+
+    // on récupère les mesages de la conversation si il y en a sinon on retourne un tableau vide
+    const messages = conversation.messages ? conversation.messages : [];
+
+    // on récupère les elements du DOM
+    const sendPrivateMessageBtn = document.getElementById('sendPrivateMessage');
+
+    
+    // on écoute le click sur le bouton d'envoi de message
+    sendPrivateMessageBtn.addEventListener('click', (e) => {
+        
+        console.log('click');
+        e.preventDefault();
+        // on récupère le contenu du message
+        const messageContent = document.getElementById('chatBoxInput').value;
+        console.log(messageContent);
+        // on ajoute le message à la fenêtre de chat si il est posté par le user en session il est à droite sinon il est à gauche
+        if (sessionUserId === otherUserId.id) {
+            addMessageToChatBox(messageContent, sessionUserName, 'left', '#d0e8f5');
+        } else {
+            addMessageToChatBox(messageContent, otherUserName, 'right', '#d0f5e3');
+        }
+    });
+
+    function addMessageToChatBox(message, user, floatSide, backGroundColor){
+        console.log('addMessageToChatBox');
+        // on récupère la fenêtre de chat
+        const chatBox = document.getElementById('chatBoxBody');
+        // on crée un élément div
+        const messageDiv = document.createElement('div');
+        // on ajoute la classe message à l'élément div
+        messageDiv.classList.add('private_message');
+        // on ajoute la classe float à l'élément div
+        messageDiv.style.float = floatSide;
+        messageDiv.style.backgroundColor = backGroundColor;
+        // on crée un élément p
+        const messageP = document.createElement('span');
+        // on ajoute le contenu du message à l'élément p
+        messageP.textContent = `${user} : ${message}` ;
+        // on ajoute l'élément p à l'élément div
+        messageDiv.appendChild(messageP);
+        // on ajoute l'élément div à la fenêtre de chat
+        chatBox.appendChild(messageDiv);
+        // on vide le champ de saisie
+        document.getElementById('chatBoxInput').value = '';
+        // on poste le message au serveur
+        postPrivateMessage(message, conversationId, sessionUserId);
+    } 
+
+    function postPrivateMessage(message, conversationId, sessionUserId) {
+
+        const data = {  
+        topic: encodeURIComponent(`conversation/${conversationId}`),
+        message: `${message}`,
+        conversation_id: `${conversationId}`,
+        author_id: `${sessionUserId}`,
+        };
+        
+        fetch('/publish/private', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log('Message privé envoyé');
+        })
+        .catch(error => {
+            console.error(error);
+        });
+
+    }
+
+
+
+    
 }
 
 </script>
+
+
 {% endblock %}
 
+
+{% endif %}
