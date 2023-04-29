@@ -23,6 +23,16 @@
     </form>
 </div>
 
+{# ici je peux utiliser une balise template ça s'y prête bien #}
+<div id="chatBox">
+    <div id="chatBoxBody">
+    <div class="inputBlock">
+        <input class="chatBoxInput" type="text">
+        <button id="sendPrivateMessage" class="btn btn-sm btn-success" type="submit">Send</button>
+    </div>
+    </div>
+</div>
+
 {% block javascript %}
 <script>
 

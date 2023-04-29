@@ -15,32 +15,34 @@ class Message
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
-     * @Groups("chat_message")
+     * @Groups({"chat_message"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=255)
-     * @Groups("chat_message")
+     * @Groups({"chat_message", "private_conversation"})
+     * 
      */
     private $content;
 
     /**
      * @ORM\ManyToOne(targetEntity=Channel::class, inversedBy="messages")
      * @ORM\JoinColumn(nullable=false)
-     * @Groups("chat_message")
+     * @Groups({"chat_message"})
      */
     private $channel;
 
     /**
      * @ORM\ManyToOne(targetEntity=User::class, inversedBy="messages")
      * @ORM\JoinColumn(nullable=false)
-     * @Groups("chat_message")
+     * @Groups({"chat_message"})
      */
     private $author;
 
     /**
      * @ORM\ManyToOne(targetEntity=Conversation::class, inversedBy="messages")
+     * 
      */
     private $conversation;
 

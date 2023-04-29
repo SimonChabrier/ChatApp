@@ -18,39 +18,39 @@ class Conversation
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
-     * @Groups("private_conversation")
+     * @Groups({"private_conversation"})
      */
     private $id;
 
     /**
-     * @ORM\ManyToMany(targetEntity=User::class, mappedBy="conversations", cascade={"persist"})
-     * @Groups("private_conversation")
+     * @ORM\ManyToMany(targetEntity=User::class, mappedBy="conversations", cascade={"persist"}, fetch="EAGER")
+     * @Groups({"private_conversation"})
      */
     private $users;
 
     /**
-     * @ORM\OneToMany(targetEntity=Message::class, mappedBy="conversation")
-     * @Groups("private_conversation")
+     * @ORM\OneToMany(targetEntity=Message::class, mappedBy="conversation", fetch="EAGER")
+     * @Groups({"private_conversation"})
      */
     private $messages;
 
     /**
      * @ORM\Column(type="boolean")
-     * @Groups("private_conversation")
+     * @Groups({"private_conversation"})
      */
     private $status = 1;
 
     /**
      * @ORM\Column(type="datetime")
      * @Stof\Timestampable(on="create")
-     * @Groups("private_conversation")
+     * @Groups({"private_conversation"})
      */
     private $createdAt;
 
     /**
      * @ORM\Column(type="datetime")
      * @Stof\Timestampable(on="update")
-     * @Groups("private_conversation")
+     * @Groups({"private_conversation"})
      */
     private $updatedAt;
 

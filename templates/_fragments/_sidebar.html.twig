@@ -149,6 +149,9 @@ channelLinks.forEach((link) => {
 
 //////////////////// CONVERSATIONS PRIVEES //////////////////////
 
+//TODO si l'utilisateur en session n'est pas dans le tableau des id des participants, on ne doit pas afficher la conversation.
+// seul les participants doivent pouvoir accéder à la conversation et la voir.
+
 // Récupérer la liste des utilisateurs
 const userList = document.querySelectorAll('li[data-id]');
 
@@ -176,7 +179,8 @@ userList.forEach( user => {
     })
     .then(data => {
       // Faire quelque chose avec les données récupérées
-      console.log(data);
+      // console.log(data.conversation);
+      displayConversation(data.conversation);
     })
     .catch(error => {
       console.error(error);
@@ -184,6 +188,77 @@ userList.forEach( user => {
   });
 });
 
+////////////////////// RECUPERER LA LISTE DES CONVERSATIONS PRIVEES D'UN UTILISATEUR //////////////////////
+function returnUserConversations(id) {
+    return paserInt(id);
+}
+
+
+// Récupérer l'ID de l'utilisateur en session
+function getUserConversations() {
+const userId = '{{ app.user.id }}';
+    if (userId) {
+        // Envoyer une requête fetch à la route /conversation avec l'ID de l'utilisateur en session
+        fetch(`user/${userId}/conversation/`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erreur lors de la récupération des données');
+            }
+            return response.json();
+        })
+        .then(data => {
+            // Faire quelque chose avec les données récupérées
+            console.log(data.conversations);
+            // display the list of conversations
+            const conversationsList = document.getElementById('conversationsList');
+            data.conversations.forEach( conversation => {
+                const li = document.createElement('li');
+                li.textContent = conversation.id;
+                conversationsList.appendChild(li);
+            });
+        })
+        .catch(error => {
+            console.error(error);
+        });
+    }
+}
+
+
+////////////////// RECUPERER LA CONVERSATION EN COURS ENTRE DEUX USERS //////////////////////
+function getUserConversationsId(id) {   
+    return fetch('/conversation/' + id)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erreur lors de la récupération des données');
+            }
+            return response.json();
+        })
+        .then(data => {
+            return data.conversations;
+        })
+        .catch(error => {
+            console.error(error);
+        });
+};
+
+///////// PRIVATE MERCURE TOPIC BETWEN TWO USERS ///////////
+
+const privateTopicslink = new URL('https://mercure.simschab.cloud/.well-known/mercure');
+privateTopicslink.searchParams.append('topic', encodeURIComponent('private/' + conversation.id));
+
+
+///////// AFFICHAGE ET MISE A JOUR DE LA CONVERSATION ENTRE DEUX USER ///////////
+ 
+function displayConversation(conversation) {
+    console.log(conversation);
+
+    // on récupère l'id de l'utilisateur en session
+    const sessionUserId = '{{ app.user.id }}';
+    // on récupère l'id de l'utilisateur avec qui on discute
+    const otherUserId = conversation.users.filter( user => user !== sessionUserId)[0];
+    // on récupère le nom de l'utilisateur avec qui on discute
+
+}
 
 </script>
 {% endblock %}

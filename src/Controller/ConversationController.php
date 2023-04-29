@@ -11,13 +11,14 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class ConversationController extends AbstractController
 {
     /**
      * @Route("/conversation", name="app_conversation", methods={"POST"})
      */
-    public function createConversation(EntityManagerInterface $manager,isConversationExist $isConversationExist, Request $request): Response
+    public function createConversation(EntityManagerInterface $manager,isConversationExist $isConversationExist, Request $request, SerializerInterface $serializer): Response
     {   
         $user = $this->getUser();
 
@@ -58,10 +59,11 @@ class ConversationController extends AbstractController
         $currentConversation = $isConversationExist->checkUsersConversations($participants, $user);
 
             if ($currentConversation !== null) {
+                // Si la conversation existe déjà, on retourne la conversation existante en json
+                $jsonContent = $serializer->serialize($currentConversation, 'json', ['groups' => 'private_conversation']);
 
                 return new JsonResponse([
-                    // retourner la conversation existante en json pour l'afficher dans le front dynamiquement en pop-up bas de page
-                    'conversation' => $currentConversation,
+                    'conversation' => json_decode($jsonContent),
                     'status' => 'conversation existante en cours...'
                 ], 200);
 

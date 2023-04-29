@@ -22,13 +22,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * @ORM\Id
      * @ORM\GeneratedValue
      * @ORM\Column(type="integer")
-     * @Groups("chat_message")
+     * @Groups({"chat_message", "private_conversation"})
      */
     private $id;
 
     /**
      * @ORM\Column(type="string", length=180, unique=true)
-     * @Groups("chat_message")
+     * @Groups({"chat_message", "private_conversation"})
      */
     private $username;
 
@@ -70,7 +70,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private $lastConnection;
 
     /**
-     * @ORM\ManyToMany(targetEntity=Conversation::class, inversedBy="users", cascade={"persist"})
+     * @ORM\ManyToMany(targetEntity=Conversation::class, inversedBy="users", cascade={"persist"}, fetch="EAGER")
+     * 
      */
     private $conversations;
 
