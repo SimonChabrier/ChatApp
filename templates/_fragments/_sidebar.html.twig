@@ -147,7 +147,42 @@ channelLinks.forEach((link) => {
 });
 
 
+//////////////////// CONVERSATIONS PRIVEES //////////////////////
 
+// Récupérer la liste des utilisateurs
+const userList = document.querySelectorAll('li[data-id]');
+
+// Ajouter un écouteur d'événements sur chaque utilisateur
+userList.forEach( user => {
+  user.addEventListener('click', (e) => {
+    
+   // e.preventDefault();
+    // Récupérer l'ID de l'utilisateur sélectionné et le convertir en int
+    const userId = parseInt(user.dataset.id);
+    console.log(userId);
+    // Envoyer une requête fetch à la route /conversation avec l'ID de l'utilisateur sélectionné
+    fetch('/conversation', {
+      method: 'POST',
+      body: JSON.stringify({ participants: [ userId ] }), // ici je passe un array parce que dans le bac on fait un count sur le nombre d'éléments dans le tableau pour si le nombre de participants invités est conforme au nombre de participants attendus
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Erreur lors de la récupération des données');
+      }
+      return response.json();
+    })
+    .then(data => {
+      // Faire quelque chose avec les données récupérées
+      console.log(data);
+    })
+    .catch(error => {
+      console.error(error);
+    });
+  });
+});
 
 
 </script>

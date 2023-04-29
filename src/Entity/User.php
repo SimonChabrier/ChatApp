@@ -69,10 +69,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     private $lastConnection;
 
+    /**
+     * @ORM\ManyToMany(targetEntity=Conversation::class, inversedBy="users", cascade={"persist"})
+     */
+    private $conversations;
+
 
     public function __construct()
     {
         $this->messages = new ArrayCollection();
+        $this->conversations = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -233,6 +239,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setLastConnection(\DateTimeInterface $lastConnection): self
     {
         $this->lastConnection = $lastConnection;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Conversation>
+     */
+    public function getConversations(): Collection
+    {
+        return $this->conversations;
+    }
+
+    public function addConversation(Conversation $conversation): self
+    {
+        if (!$this->conversations->contains($conversation)) {
+            $this->conversations[] = $conversation;
+        }
+
+        return $this;
+    }
+
+    public function removeConversation(Conversation $conversation): self
+    {
+        $this->conversations->removeElement($conversation);
 
         return $this;
     }

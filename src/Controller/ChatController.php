@@ -26,7 +26,7 @@ class ChatController extends AbstractController
      * 
      * @Route("/publish", name="app_publish")
      */
-    public function getMessage(
+    public function getPublicChannelMessage(
             MessageBusInterface $bus,
             Request $request
             ): Response
@@ -77,4 +77,5 @@ class ChatController extends AbstractController
             'count' => 1,
         ]);
     }
+
 }
