@@ -1,0 +1,166 @@
+{# ici je peux utiliser une balise template ça s'y prête bien #}
+<div id="chatBox">
+<span id="closeChatBox">X</span>
+    <div id="chatBoxBody">
+    </div>
+    <div class="inputBlock">
+        <input id="chatBoxInput" type="text">
+        <button id="sendPrivateMessage" class="btn btn-sm btn-success" type="submit">Send</button>
+    </div>
+</div>
+
+
+{% block javascripts %}
+<script>
+
+
+//////////////////// INITIALISATION DE LA CONVERSATION /////////////////
+//////////////////// SOIT ELLE EXISTE DEJA ET ON LA MET A JOUR SOIT IL LA CREE ET ON LA MET A JOUR ///////////
+
+function startConversation () {
+    // Récupérer la liste des utilisateurs
+    const userList = document.querySelectorAll('li[data-id]');
+    // Ajouter un écouteur d'événements sur chaque utilisateur de la liste pour créer une conversation au clic
+    userList.forEach( user => {
+        user.addEventListener('click', (e) => {
+        // Récupérer l'ID de l'utilisateur sélectionné et le convertir en int
+        const userId = parseInt(user.dataset.id);
+        // Envoyer une requête fetch à la route /conversation avec l'ID de l'utilisateur sélectionné
+            fetch('/conversation', {
+            method: 'POST',
+            body: JSON.stringify({ participants: [ userId ] }), // ici je passe un array parce que dans le bac on fait un count sur le nombre d'éléments dans le tableau pour si le nombre de participants invités est conforme au nombre de participants attendus
+            headers: {
+                'Content-Type': 'application/json'
+            }
+            })
+            .then(response => {
+            if (!response.ok) {
+                throw new Error('Erreur lors de la récupération des données');
+            }
+            return response.json();
+            })
+            .then(data => {
+                // Faire quelque chose avec les données récupérées
+                // console.log(data.conversation);
+                pub(data.conversation);
+                sub(data.conversation.id);
+                displayChatBox();
+                closeChatBox();
+            })
+            .catch(error => {
+            console.error(error);
+            });
+        });
+    });
+}
+
+startConversation();
+
+///////////////// PUBLICATION DU NOUVEAU MESSAGE PRIVE SUR MERCURE //////////////////
+
+function pub(conversation) {
+
+    const sessionUserId = parseInt('{{ app.user.id }}');
+    const otherUserId = conversation.users.find( user => parseInt(user.id) !== sessionUserId);
+    const conversationId = conversation.id;
+    
+    document.getElementById('sendPrivateMessage').addEventListener('click', (e) => {
+
+        e.preventDefault();
+        // on récupère le contenu du message dans l'input
+        const message = document.getElementById('chatBoxInput').value;
+        
+        const data = {  
+        
+        topic: encodeURIComponent(`conversation/${conversationId}`),
+        message: `${message}`,
+        conversation_id: `${conversationId}`,
+        author_id: `${sessionUserId}`,
+
+        };
+        
+        fetch('/publish/private', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log('Message privé envoyé');
+            document.getElementById('chatBoxInput').value = '';
+        })
+        .catch(error => {
+            console.error(error);
+        });
+
+    });
+}
+
+///////////////// SOUSCRIPTION CONVERSATION PRIVEES ET AFFICHAGE DES MESSAGES RECUS //////////////////
+
+function sub(id){
+    
+    const link = 'https://mercure.simschab.cloud/.well-known/mercure';
+
+    const url = new URL(link);
+    url.searchParams.append('topic', encodeURIComponent(`conversation/${id}`));
+    
+    const eventSource = new EventSource(url);
+        // réponses de Mercure 
+        eventSource.onmessage = e => { 
+            const data = JSON.parse(e.data);
+            console.log(data);
+            createNewMessageSpan(data);     
+        };
+}
+
+///////////////// GESTION AFFICHAGE DU CHAT /////////////////////
+
+function displayChatBox() {
+    const chatBox = document.getElementById('chatBox');
+    chatBox.style.display = 'block';
+    for (opacity = 0; opacity < 1.1; opacity = opacity + 0.1) {           
+        setTimeout(function(){chatBox.style.opacity = opacity;},150)                       
+    } 
+}
+
+function closeChatBox() {
+    
+    const closeChatBox = document.getElementById('closeChatBox');
+    const chatBox = document.getElementById('chatBox');
+    
+    closeChatBox.addEventListener('click', (e) => {
+        console.log(e.target.id);
+        if (e.target.id === 'closeChatBox') {
+            for (let opacity = 1; opacity > -0.1; opacity -= 0.1) {           
+                setTimeout(() => {
+                    chatBox.style.opacity = opacity;
+                }, 150);
+            } 
+            setTimeout(() => {
+                chatBox.style.display = 'none';
+            }, 150);
+        }
+    });
+}
+
+function createNewMessageSpan (data) {
+
+    const chatBoxBody = document.getElementById('chatBoxBody');
+    const span = document.createElement('span');
+
+    span.classList.add('private_message');
+
+        if (data.author_id === {{ app.user.id }}) {
+            span.style.float = 'right';
+            span.style.backgroundColor = '#cbffd6';
+        } else {
+            span.style.float = 'left';
+        }
+
+    // on ajoute les données retournées par Mercure dans la réponse sur le DOM
+    span.innerText = `${data.message}`;
+    chatBoxBody.appendChild(span, chatBoxBody.lastElementChild); 
+}
+
+</script>
+{% endblock %}
