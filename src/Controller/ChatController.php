@@ -114,5 +114,35 @@ class ChatController extends AbstractController
         return new JsonResponse(['data' => $data]);
 
     }
+
+    /**
+     * Route qui récupère les données des conversations privées du formulaire les dipatche dans le bus
+     * 
+     * @Route("/ask/conversation", name="app_ask_private")
+     */
+    public function getPrivateChannelMessage2(
+            Request $request,
+            HubInterface $hub
+            ): Response
+    {
+
+        $data = json_decode(
+            $request->getContent(),
+            true // getContent() récupère le body de la requête
+        );
+
+        $update = new Update(
+            $data['topic'],
+            json_encode([
+                'topic' => $data['topic'],
+                'message' => htmlspecialchars($data['message']),
+            ])
+        );
+
+        $hub->publish($update);
+
+    return new JsonResponse(['data' => $data]);
+
+    }
                 
 }

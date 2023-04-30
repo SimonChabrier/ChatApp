@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', (evt) => {
         return regex.test(topic);
     });
 
-    console.log(userTopicLink);
+    //console.log(userTopicLink);
 
 
 //* 3 - On crée la souscription de l'utilisateur à son topic privé
@@ -95,7 +95,7 @@ function chooseUserInUserList(connectedUsers) {
 
             // ici il faut que je récupère la conversation d'abord avec le user cliqué et une promesse
             // je récupère l'id de l'utilisateur cliqué pour l'envoyer au back.
-            post(user.getAttribute('data-id'));
+            //post(user.getAttribute('data-id'));
 
             // ensuite part dans 
 
@@ -116,9 +116,7 @@ function sendFrontNotification(user){
     // on récupère l'id de l'utilisateur cliqué
     const userId = user.getAttribute('data-id');
     
-    // on prépare le message à envoyer
-    const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjdXJlIjp7InB1Ymxpc2giOlsiKiJdLCJzdWJzY3JpYmUiOlsiKiJdfX0.nINXJPMGL7u4vvquYYm3zgMosrqrxTSooTs7R_OJLZA';
-    
+    // on prépare le message à envoyer    
     const data = {
         // on récupère l'id de l'utilisateur cliqué qui correspond au topic privé auquel cet utilisateur est abonné
         topic: `private-conversation=${userId}`,
@@ -126,21 +124,17 @@ function sendFrontNotification(user){
     };
 
         // on poste un message privé à l'utilisateur cliqué via mercure qui recevra la notification
-        fetch(url, {
+        fetch('/ask/conversation', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': 'Bearer ' + `${TOKEN}` 
-            },
-        body: `data=${encodeURIComponent(data.message)}&topic=${encodeURIComponent(data.topic)}` // envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
-        //body: "message privé" // envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
+        body: JSON.stringify(data),// envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
         })
-        .then(response => response.text())
+       .then(response => response.text())
         .then(data => {
             console.log(data);
-            // on poste le message privé dans la conversation privée vers le serveur
         })
-        .catch(error => console.log(error));
+        .catch(error => {
+            console.error(error);
+        });
 }
 
 
@@ -172,17 +166,54 @@ function sendFrontNotification(user){
     .then(data => {
         console.log(data);
         // ici il faut que je m'ouvre la chatbox avec le bon topic
-        const chatBoxId = data.conversation._id; // Récupérer l'ID de la conversation
-
-        
-
+        const chatBoxId = data.conversation._id; // Récupérer l'ID de la conversation créée
         openChatBox(chatBoxId);
+
+
     })
     .catch(error => {
         console.error(error);
     });
  }   
 
+
+/////////////////////////////////
+/////////////////////////////////
+/////////////////////////////////
+///////////////////////////////// 29 AVRIL PUBLICATION MESSAGE PRIVÉ
+///////////////// PUBLICATION DU NOUVEAU MESSAGE PRIVE SUR MERCURE //////////////////
+function pub(conversation) {
+    const sessionUserId = parseInt('{{ app.user.id }}');
+    const otherUserId = conversation.users.find( user => parseInt(user.id) !== sessionUserId);
+    const conversationId = conversation.id;
+    
+    document.getElementById('sendPrivateMessage').addEventListener('click', (e) => {
+        e.preventDefault();
+        // on récupère le contenu du message dans l'input
+        const message = document.getElementById('chatBoxInput').value;
+        
+        const data = {  
+        
+        topic: encodeURIComponent(`conversation/${conversationId}`),
+        message: `${message}`,
+        conversation_id: `${conversationId}`,
+        author_id: `${sessionUserId}`,
+        };
+        
+        fetch('/publish/private', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log('Message privé envoyé');
+            document.getElementById('chatBoxInput').value = '';
+        })
+        .catch(error => {
+            console.error(error);
+        });
+    });
+}
 
 
 ///////////////// GESTION AFFICHAGE DU CHAT /////////////////////

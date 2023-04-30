@@ -75,8 +75,6 @@ class ConversationController extends AbstractController
                 foreach ($participants as $participant) {
                     $conversation->addUser($participant);
                 }
-                // $manager->persist($conversation);
-                // $manager->flush();
 
                 // Utilisation de wrapInTransaction de Doctrine pour encapsuler la persistance et le flush dans une transaction unique
                 // Cela permet d'éviter les conflits de transactions, où plusieurs appels concurrents tentent d'accéder simultanément 
