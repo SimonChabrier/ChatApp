@@ -263,6 +263,8 @@ function conversationSubscribe(id){
 
 function openChatBox(conversation) {
 
+     createNewMessageSpan(conversation.messages)
+
     // on récupère l'envent source actif et on le ferme pour en ouvrir un nouveau à la volée sur la publication du message privé dans conversationPublish()
     let currentEventSource = conversationSubscribe(conversation.id);
     currentEventSource.close();

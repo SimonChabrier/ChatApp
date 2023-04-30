@@ -126,8 +126,10 @@ submitToBack.addEventListener('click', (e) => {
 // behavior spécifie le type de transition à utiliser pour le scroll, avec la valeur 'smooth' pour un scroll doux.
 // block spécifie l'alignement vertical de l'élément dans la fenêtre d'affichage, avec la valeur 'end' pour aligner le bas de l'élément avec le bas de la fenêtre.
 
-messages.lastElementChild.scrollIntoView({behavior: 'smooth', block: 'end'});
-
+ // TODO gèrer l'erreur sur le scroll quand un channel n'a pas encore de div de message
+    if(messages.style.height != '') {
+        messages.lastElementChild.scrollIntoView({behavior: 'smooth', block: 'end'});
+    }
 </script>
 {% endblock %}
 

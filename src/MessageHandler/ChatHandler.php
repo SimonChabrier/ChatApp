@@ -22,7 +22,7 @@ final class ChatHandler implements MessageHandlerInterface
 
      public function __invoke(ChatMessage $chat)
     {   
-        $channel = $this->manager->getRepository(Conversation::class)->findOneBy(['id' => $chat->getChannelId()]);
+        $channel = $this->manager->getRepository(Channel::class)->findOneBy(['id' => $chat->getChannelId()]);
         $user = $this->manager->getRepository(User::class)->findOneBy(['id' => $chat->getAuthorId()]);
 
         $message = new Message();
