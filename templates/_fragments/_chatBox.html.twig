@@ -189,6 +189,8 @@ function sendInvitation(userId, conversation){
 ///////////////// PUBLICATION DU NOUVEAU MESSAGE PRIVE SUR MERCURE //////////////////
 function conversationPublish(conversation) {
 
+    console.log('publish');
+
     const sessionUserId = parseInt('{{ app.user.id }}');
     const otherUserId = conversation.users.find( user => parseInt(user.id) !== sessionUserId);
     const conversationId = conversation.id;
@@ -248,35 +250,48 @@ function conversationSubscribe(id){
 
     // on autorise la fermeture de la chatbox et on se passe l'onjet eventSource pour pouvoir le fermer
     closeChatBox(eventSourceConversation);
+
+    // on retourne l'event eventSourceConversation 
+    return eventSourceConversation
 }
 
 ///////////////// GESTION AFFICHAGE DU CHAT /////////////////////
 
 function openChatBox(conversation) {
 
+    // on récupère l'envent source actif pour qu epersonne n'y souscrive deux fois
+    let currentEventSource = conversationSubscribe(conversation.id);
+    // on traite les chaines de caractères pour pouvoir les comparer (les paramètres de l'url sont encodés et on veut les comparer avec les paramètres de l'url au format string non encodé)
+    // on décode l'url de l'eventSource actuel et on extraie les paramètres de l'url puis on encode les paramètres de l'url de la conversation actuelle
+    console.log(decodeURIComponent(currentEventSource.url).split('=')[1] === encodeURIComponent(`conversation/${conversation.id}`));
+
+    if (conversation && decodeURIComponent(currentEventSource.url).split('=')[1] === encodeURIComponent(`conversation/${conversation.id}`)) {
+    
     const chatBox = document.getElementById('chatBox');
-    console.log(conversation.users);
+    //console.log(conversation.users);
     
     chatBox.dataset.conversationId = conversation.id;
 
-    for(let i = 0; i < conversation.users.length; i++) {
-        //on ajoute les Id des participants à la conversation dans le dataset de la chatbox
-        chatBox.dataset[`user${i+1}Id`] = conversation.users[i].id;
-    }
-    chatBox.dataset.user1Id = conversation.users[0].id;
-    chatBox.dataset.user2Id = conversation.users[1].id;
+        for(let i = 0; i < conversation.users.length; i++) {
+            //on ajoute les Id des participants à la conversation dans le dataset de la chatbox
+            chatBox.dataset[`user${i+1}Id`] = conversation.users[i].id;
+        }
+        chatBox.dataset.user1Id = conversation.users[0].id;
+        chatBox.dataset.user2Id = conversation.users[1].id;
+        
+        chatBox.style.display = 'block';
+
+        for (opacity = 0; opacity < 1.1; opacity = opacity + 0.1) {           
+            setTimeout(function(){chatBox.style.opacity = opacity;},150)                       
+        } 
     
-    chatBox.style.display = 'block';
-
-    for (opacity = 0; opacity < 1.1; opacity = opacity + 0.1) {           
-        setTimeout(function(){chatBox.style.opacity = opacity;},150)                       
-    } 
-
-    // on va souscrire à la conversation pour recevoir les messages privés ce cette conversation par son id
-    conversationSubscribe(conversation.id);
-
+    //conversationSubscribe(conversation.id);
     // on autorise la publication de message privé sur mercure
     conversationPublish(conversation);
+
+    } else {
+        console.log('conversation interdite');
+    }
 }
 
 function closeChatBox(eventSourceConversation) {
@@ -297,6 +312,11 @@ function closeChatBox(eventSourceConversation) {
             } 
             setTimeout(() => {
                 chatBox.style.display = 'none';
+
+                // clean chatbox content
+                const chatBoxBody = document.getElementById('chatBoxBody');
+                chatBoxBody.innerHTML = '';
+
             }, 150);
         }
     });
