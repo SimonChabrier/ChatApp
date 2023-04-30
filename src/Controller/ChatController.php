@@ -111,7 +111,7 @@ class ChatController extends AbstractController
 
         $hub->publish($update);
 
-        return new JsonResponse(['message' => 'ok']);
+        return new JsonResponse(['data' => $data]);
 
     }
                 
