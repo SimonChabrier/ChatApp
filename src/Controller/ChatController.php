@@ -135,7 +135,7 @@ class ChatController extends AbstractController
             $data['topic'],
             json_encode([
                 'topic' => $data['topic'],
-                'message' => htmlspecialchars($data['message']),
+                'conversation' => $data['message'],
             ])
         );
 
