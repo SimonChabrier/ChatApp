@@ -57,17 +57,27 @@
         link.searchParams.append('private-chat', encodeURIComponent(user.dataset.id));
         privateTopicsLinks.push(link);
         });
-        console.log(privateTopicsLinks);
+        privateTopicsLinks.forEach((link) => {
+        console.log(link.href);
+        });
         return privateTopicsLinks;
     }
 
     /////////////////
+
+    // on ajoute les topics privés pour chaque utilisateur connecté
+    let privateTopicsLiks = createPrivateChatsLinks();
+
     const topicslink = new URL('https://mercure.simschab.cloud/.well-known/mercure');
     topicslink.searchParams.append('topic', encodeURIComponent('user_connected'));
     topicslink.searchParams.append('topic', encodeURIComponent('user_disconnected'));
+    topicslink.searchParams.append('topic', encodeURIComponent('channel'));
     
     // on ajoute les topics privés pour chaque utilisateur connecté
-    createPrivateChatsLinks();
+    privateTopicsLiks.forEach((link) => {
+        topicslink.searchParams.append('private-topic', encodeURIComponent(link.href));
+    });
+    
     
     // on peut imaginer ajouter d'autres topics pour les messages, les channels, etc...    
     const usersEventSource = new EventSource(topicslink);
