@@ -28,6 +28,7 @@ class ConversationController extends AbstractController
             ], 401);
         } 
 
+        // on récupère le tableau des id des participants envoyé par JS
         $requestData = json_decode($request->getContent(), true);
         $participantIds = $requestData['participants'];
 
