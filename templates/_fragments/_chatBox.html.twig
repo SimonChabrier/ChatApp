@@ -223,13 +223,14 @@ function conversationPublish(conversation) {
         });
     });
 }
-
-
 ///////////////// SOUSCRIPTION CONVERSATION PRIVEES ET AFFICHAGE DES MESSAGES RECUS //////////////////
-function conversationSubscribe(id, status){
 
-    if(status === true ){
+// déclarer une variable eventSourceConversation en dehors du bloc if pour
+// y accéder plus tard dans toutes les méthodes et l'initialiser avec ce que l'on veut à la volée
+let eventSourceConversation = null; 
 
+function conversationSubscribe(id){
+    
     console.log(status);
     console.log('souscription à la conversation privée');
     
@@ -237,30 +238,19 @@ function conversationSubscribe(id, status){
     const url = new URL(link);
     url.searchParams.append('topic', encodeURIComponent(`conversation/${id}`));
     
-    const eventSource = new EventSource(url);
+    eventSourceConversation = new EventSource(url);
         // réponses de Mercure 
-        eventSource.onmessage = e => { 
+        eventSourceConversation.onmessage = e => { 
             const data = JSON.parse(e.data);
             console.log(data);
             createNewMessageSpan(data);     
         };
-
-    } else {
-        console.log(status);
-        console.log('désouscription à la conversation privée');
-
-        // stop to listen the conversation
-        // kill the eventSource
-
-        eventSource.close();
-    }
-
-   
 }
 
 ///////////////// GESTION AFFICHAGE DU CHAT /////////////////////
 
 function openChatBox(conversation) {
+
     const chatBox = document.getElementById('chatBox');
     console.log(conversation.users);
     
@@ -273,7 +263,6 @@ function openChatBox(conversation) {
     chatBox.dataset.user1Id = conversation.users[0].id;
     chatBox.dataset.user2Id = conversation.users[1].id;
     
-    
     chatBox.style.display = 'block';
 
     for (opacity = 0; opacity < 1.1; opacity = opacity + 0.1) {           
@@ -281,16 +270,16 @@ function openChatBox(conversation) {
     } 
 
     // on va souscrire à la conversation pour recevoir les messages privés ce cette conversation par son id
-    conversationSubscribe(conversation.id, true);
+    conversationSubscribe(conversation.id);
 
     // on autorise la publication de message privé sur mercure
     conversationPublish(conversation);
 
-    // on autorise la fermeture de la chatbox
-    closeChatBox(conversation);
+    // on autorise la fermeture de la chatbox et on se passe l'onjet eventSource pour pouvoir le fermer
+    closeChatBox(conversation, eventSource);
 }
 
-function closeChatBox(conversation) {
+function closeChatBox(conversation, eventSourceConversation) {
 
     const chatBox = document.getElementById('chatBox');
     
@@ -298,8 +287,7 @@ function closeChatBox(conversation) {
         
         e.preventDefault();
 
-        // on se désabonne de la conversation
-        conversationSubscribe(conversation.id, false)
+        eventSourceConversation.close();
 
         if (e.target.id === 'closeChatBox') {
             for (let opacity = 1; opacity > -0.1; opacity -= 0.1) {           
