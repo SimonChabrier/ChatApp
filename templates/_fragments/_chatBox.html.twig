@@ -18,15 +18,20 @@
 ///////////////// On crée les topics privés pour chaque utilisateur connecté ///////////////////////
 
 document.addEventListener('DOMContentLoaded', (evt) => {
+
     console.log('DOM chargé');
 
-    //* 0 - on récupère l'id de l'utilisateur connecté en session pour l'utiliser dans les topics privés
+//// INIT
+
+
+//* 0 - on récupère l'id et le nom de l'utilisateur connecté en session
+
     const appUser = {{ app.user.id }};
     const appUserName = '{{ app.user.username}}';
-    console.log(appUser);
-    console.log(appUserName);
     
-    //* 1 - on crée la liste potentielle de tous les topics qui peuvent exister en fonction des utilisateurs connectés.
+
+//* 1 - on crée la liste potentielle de tous les topics qui peuvent exister en fonction des utilisateurs connectés.
+
 
     const topics = [];
     // On récupère la liste d'utilisateurs connectés dans le DOM
@@ -41,7 +46,10 @@ document.addEventListener('DOMContentLoaded', (evt) => {
         topics.push(topic);
     });
 
-    //* 2 - On abonne chaque utilisateur en seesion au topic privé qui le concerne
+    chooseUserInUserList(connectedUsers);
+   
+//* 2 - On abonne chaque utilisateur en seesion au topic privé qui le concerne
+
 
     const userTopicLink = topics.filter((topic) => {
         // on filtre la liste des topics pour ne garder que ceux qui concernent l'utilisateur connecté
@@ -51,60 +59,98 @@ document.addEventListener('DOMContentLoaded', (evt) => {
 
     console.log(userTopicLink);
 
-    //* 3 - On crée la souscription de l'utilisateur à son topic privé
-    
+
+//* 3 - On crée la souscription de l'utilisateur à son topic privé
+
+
     const link = 'https://mercure.simschab.cloud/.well-known/mercure';
     const url = new URL(link);
     url.searchParams.append('topic', `${userTopicLink}`);
     const eventSource = new EventSource(url);
 
-    // On écoute les messages reçus du hub
+
+//* 4 - On écoute les messages reçus du hub
+
+
     eventSource.onmessage = e => {
         console.log(e.data);
-        displayChatBox(e.data);
+        openChatBox(e.data);
     };
 
 
-    // on écoute le clic sur chaque utilisateur connecté pour poster un message privé à cet utilisateur sur son topic privé
+//* 5 - On écoute les clics sur les utilisateurs connectés pour envoyer un message privé à l'utilisateur cliqué
+
+
+function chooseUserInUserList(connectedUsers) {
+
     connectedUsers.forEach((user) => {
+
         console.log(user);
         
         user.addEventListener('click', (e) => {
 
-        e.preventDefault();
+            console.log('click');
 
-        // on récupère l'id de l'utilisateur cliqué
-        const userId = user.getAttribute('data-id');
-        
-        // on prépare le message à envoyer
-        const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjdXJlIjp7InB1Ymxpc2giOlsiKiJdLCJzdWJzY3JpYmUiOlsiKiJdfX0.nINXJPMGL7u4vvquYYm3zgMosrqrxTSooTs7R_OJLZA';
-        const data = {
-            // on récupère l'id de l'utilisateur cliqué qui correspond au topic privé auquel cet utilisateur est abonné
-            topic: `private-conversation=${userId}`,
-            message: `Message reçu de l\'utilisateur : ${appUserName}`,
-        };
+            e.preventDefault();
 
-            // on poste un message privé à l'utilisateur cliqué via mercure qui recevra la notification
-            fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': 'Bearer ' + `${TOKEN}` 
-                },
-            body: `data=${encodeURIComponent(data.message)}&topic=${encodeURIComponent(data.topic)}` // envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
-            //body: "message privé" // envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
-            })
-            .then(response => response.text())
-            .then(data => {
-                console.log(data);
-                post(userId);
-            })
-            .catch(error => console.log(error));
-            });
+            // ici il faut que je récupère la conversation d'abord avec le user cliqué et une promesse
+            // je récupère l'id de l'utilisateur cliqué pour l'envoyer au back.
+            post(user.getAttribute('data-id'));
+
+            // ensuite part dans 
+
+            sendFrontNotification(user);
+
+
+            // initialiser la fenêtre de chat avec l'id de la conversation pour lui et pour moi
+            // une fois que j'ai la conversation je peux envoyer le message privé à l'utilisateur cliqué
+
+            
+
         });
     });
+}
 
- /////////////////////////////////
+function sendFrontNotification(user){
+
+    // on récupère l'id de l'utilisateur cliqué
+    const userId = user.getAttribute('data-id');
+    
+    // on prépare le message à envoyer
+    const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtZXJjdXJlIjp7InB1Ymxpc2giOlsiKiJdLCJzdWJzY3JpYmUiOlsiKiJdfX0.nINXJPMGL7u4vvquYYm3zgMosrqrxTSooTs7R_OJLZA';
+    
+    const data = {
+        // on récupère l'id de l'utilisateur cliqué qui correspond au topic privé auquel cet utilisateur est abonné
+        topic: `private-conversation=${userId}`,
+        message: `Message reçu de l\'utilisateur : ${appUserName}`,
+    };
+
+        // on poste un message privé à l'utilisateur cliqué via mercure qui recevra la notification
+        fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Authorization': 'Bearer ' + `${TOKEN}` 
+            },
+        body: `data=${encodeURIComponent(data.message)}&topic=${encodeURIComponent(data.topic)}` // envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
+        //body: "message privé" // envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log(data);
+            // on poste le message privé dans la conversation privée vers le serveur
+        })
+        .catch(error => console.log(error));
+}
+
+
+
+/////////////////////////////////
+/////////////////////////////////
+/////////////////////////////////
+/////////////////////////////////
+
+
 
  function post(userId){
     
@@ -125,6 +171,12 @@ document.addEventListener('DOMContentLoaded', (evt) => {
     })
     .then(data => {
         console.log(data);
+        // ici il faut que je m'ouvre la chatbox avec le bon topic
+        const chatBoxId = data.conversation._id; // Récupérer l'ID de la conversation
+
+        
+
+        openChatBox(chatBoxId);
     })
     .catch(error => {
         console.error(error);
@@ -132,9 +184,10 @@ document.addEventListener('DOMContentLoaded', (evt) => {
  }   
 
 
+
 ///////////////// GESTION AFFICHAGE DU CHAT /////////////////////
 
-function displayChatBox(data) {
+function openChatBox(data) {
     const chatBox = document.getElementById('chatBox');
     console.log('on affiche la chatbox');
     //chatBox.dataset.conversationId = data.conversation.id;
@@ -194,6 +247,8 @@ function createNewMessageSpan (data) {
 }
 
 
+
+}); //  end dom loaded
 
 </script>
 {% endblock %}
