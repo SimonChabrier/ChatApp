@@ -189,6 +189,10 @@ function sendInvitation(userId, conversation){
 ///////////////// PUBLICATION DU NOUVEAU MESSAGE PRIVE SUR MERCURE //////////////////
 function conversationPublish(conversation) {
 
+    // open current event source
+    let currentEventSource = conversationSubscribe(conversation.id);
+    
+
     console.log('publish');
 
     const sessionUserId = parseInt('{{ app.user.id }}');
@@ -259,8 +263,10 @@ function conversationSubscribe(id){
 
 function openChatBox(conversation) {
 
-    // on récupère l'envent source actif pour qu epersonne n'y souscrive deux fois
+    // on récupère l'envent source actif et on le ferme pour en ouvrir un nouveau à la volée sur la publication du message privé dans conversationPublish()
     let currentEventSource = conversationSubscribe(conversation.id);
+    currentEventSource.close();
+
     // on traite les chaines de caractères pour pouvoir les comparer (les paramètres de l'url sont encodés et on veut les comparer avec les paramètres de l'url au format string non encodé)
     // on décode l'url de l'eventSource actuel et on extraie les paramètres de l'url puis on encode les paramètres de l'url de la conversation actuelle
     console.log(decodeURIComponent(currentEventSource.url).split('=')[1] === encodeURIComponent(`conversation/${conversation.id}`));
@@ -285,7 +291,6 @@ function openChatBox(conversation) {
             setTimeout(function(){chatBox.style.opacity = opacity;},150)                       
         } 
     
-    //conversationSubscribe(conversation.id);
     // on autorise la publication de message privé sur mercure
     conversationPublish(conversation);
 
@@ -302,6 +307,7 @@ function closeChatBox(eventSourceConversation) {
         
         e.preventDefault();
 
+        // on ferme l'eventSource
         eventSourceConversation.close();
 
         if (e.target.id === 'closeChatBox') {

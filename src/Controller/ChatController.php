@@ -4,14 +4,15 @@ namespace App\Controller;
 
 use App\Message\ChatMessage;
 use App\Message\MercureMessage;
+use App\Message\PrivateMessage;
+use Symfony\Component\Mercure\Update;
+use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Mercure\HubInterface;
-use Symfony\Component\Mercure\Update;
 
 class ChatController extends AbstractController
 {   
@@ -86,7 +87,8 @@ class ChatController extends AbstractController
      */
     public function getPrivateChannelMessage(
             Request $request,
-            HubInterface $hub
+            HubInterface $hub,
+            MessageBusInterface $bus
             ): Response
     {
     $data = json_decode(
@@ -98,6 +100,7 @@ class ChatController extends AbstractController
     // donc c'est lui qui va gérer l'envoi des données aux clients sans bloquer le serveur de cette app.
     // et qu'on a besoin de récupérer la réponse pour l'afficher dans la vue tout de suite.
     // Pas besoin de lancer de worker pour le bus en synchrone et pas besoin de table dans la BDD pour les messages.
+    
     $update = new Update(
         $data['topic'],
         json_encode([
@@ -111,8 +114,17 @@ class ChatController extends AbstractController
 
         $hub->publish($update);
 
-        return new JsonResponse(['data' => $data]);
+        //TODO persister les messages de la conversation en BDD
+        // maintenant on dispatche en asynchrone pour gèrer le stockage des messages en BDD
+        $bus->dispatch(new PrivateMessage(
+            htmlspecialchars($data['message']), 
+            (int) $data['conversation_id'], 
+            //(int) $data['author_id'])
+            $this->getUser()->getId()),
+        );
 
+
+        return new JsonResponse(['data' => $data]);
     }
 
     /**

@@ -28,7 +28,6 @@ class Message
 
     /**
      * @ORM\ManyToOne(targetEntity=Channel::class, inversedBy="messages")
-     * @ORM\JoinColumn(nullable=false)
      * @Groups({"chat_message"})
      */
     private $channel;
