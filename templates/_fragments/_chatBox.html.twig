@@ -46,7 +46,7 @@ function startConversation () {
                 sub(data.conversation.id);
                 pub(data.conversation);
                 
-                displayChatBox();
+                displayChatBox(data);
                 closeChatBox();
             })
             .catch(error => {
@@ -117,8 +117,17 @@ function sub(id){
 
 ///////////////// GESTION AFFICHAGE DU CHAT /////////////////////
 
-function displayChatBox() {
+function displayChatBox(data) {
     const chatBox = document.getElementById('chatBox');
+    console.log('on affiche la chatbox');
+    chatBox.dataset.conversationId = data.conversation.id;
+    for(let i = 0; i < data.conversation.users.length; i++) {
+        //on ajoute les Id des participants à la conversation dans le dataset de la chatbox
+        chatBox.dataset[`user${i+1}Id`] = data.conversation.users[i].id;
+    }
+    //chatBox.dataset.user1Id = data.conversation.users[0].id;
+    //chatBox.dataset.user2Id = data.conversation.users[1].id;
+    
     chatBox.style.display = 'block';
     for (opacity = 0; opacity < 1.1; opacity = opacity + 0.1) {           
         setTimeout(function(){chatBox.style.opacity = opacity;},150)                       
@@ -147,6 +156,7 @@ function closeChatBox() {
 function createNewMessageSpan (data) {
 
     const chatBoxBody = document.getElementById('chatBoxBody');
+
     const span = document.createElement('span');
 
     span.classList.add('private_message');
