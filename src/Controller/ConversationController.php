@@ -84,9 +84,12 @@ class ConversationController extends AbstractController
                     $manager->persist($conversation);
                     $manager->flush();
                 });
+
+                // sérialize la nouvelle conversation pour l'initialiser après sa création et la retourner.
+                $jsonContent = $serializer->serialize($conversation, 'json', ['groups' => 'private_conversation']);
             
                 return new JsonResponse([
-                    'conversation' => $conversation,
+                    'conversation' => json_decode($jsonContent),
                     'status' => 'Nouvelle conversation créée'
                 ], 200);
             }

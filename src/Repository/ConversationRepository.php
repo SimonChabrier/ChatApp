@@ -73,8 +73,10 @@ class ConversationRepository extends ServiceEntityRepository
 
         $qb->select('c')
             ->innerJoin('c.users', 'u')
-            // filtre les résultats pour que l'utilisateur soit présent dans la liste de participants passée en paramètre:
+            // filtre les conversations auxquelles les participants passés en paramètre sont associés.
             ->where('u IN (:participants)')
+            // vérifie si l'utilisateur en session est aussi dans la liste des participants
+            ->andWhere(':currentUser MEMBER OF c.users')
             // ajoute une contrainte pour ne récupérer que les conversations actives (avec un status = 1):
             ->andWhere('c.status = 1')
             // groupe les résultats par l'id de la conversation:
@@ -83,7 +85,8 @@ class ConversationRepository extends ServiceEntityRepository
             ->having('COUNT(c.id) = :count')
             // on passe les valeurs aux :paramètres
             ->setParameter('participants', $participants)
-            ->setParameter('count', count($participants));
+            ->setParameter('count', count($participants))
+            ->setParameter('currentUser', $currentUser);
 
         $result = $qb->getQuery()->getResult();
 

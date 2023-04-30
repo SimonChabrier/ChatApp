@@ -1,18 +1,17 @@
 {# ici je peux utiliser une balise template ça s'y prête bien #}
 <div id="chatBox">
-<span id="closeChatBox">X</span>
-    <div id="chatBoxBody">
-    </div>
+    <span id="closeChatBox">X</span>
+    <div id="chatBoxBody"></div>
     <div class="inputBlock">
         <input id="chatBoxInput" type="text">
         <button id="sendPrivateMessage" class="btn btn-sm btn-success" type="submit">Send</button>
     </div>
 </div>
 
+{% if app.user %}
 
 {% block javascripts %}
 <script>
-
 
 //////////////////// INITIALISATION DE LA CONVERSATION /////////////////
 //////////////////// SOIT ELLE EXISTE DEJA ET ON LA MET A JOUR SOIT IL LA CREE ET ON LA MET A JOUR ///////////
@@ -41,9 +40,12 @@ function startConversation () {
             })
             .then(data => {
                 // Faire quelque chose avec les données récupérées
-                // console.log(data.conversation);
-                pub(data.conversation);
+                console.log(data.conversation);
+                console.log(data.status);
+                // TODO ici un souci a la création de la conversation elle est retournée vide 
                 sub(data.conversation.id);
+                pub(data.conversation);
+                
                 displayChatBox();
                 closeChatBox();
             })
@@ -125,11 +127,10 @@ function displayChatBox() {
 
 function closeChatBox() {
     
-    const closeChatBox = document.getElementById('closeChatBox');
     const chatBox = document.getElementById('chatBox');
     
-    closeChatBox.addEventListener('click', (e) => {
-        console.log(e.target.id);
+    document.getElementById('closeChatBox').addEventListener('click', (e) => {
+        
         if (e.target.id === 'closeChatBox') {
             for (let opacity = 1; opacity > -0.1; opacity -= 0.1) {           
                 setTimeout(() => {
@@ -164,3 +165,5 @@ function createNewMessageSpan (data) {
 
 </script>
 {% endblock %}
+{% endif %}
+
