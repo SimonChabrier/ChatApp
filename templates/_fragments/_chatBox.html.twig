@@ -245,6 +245,9 @@ function conversationSubscribe(id){
             console.log(data);
             createNewMessageSpan(data);     
         };
+
+    // on autorise la fermeture de la chatbox et on se passe l'onjet eventSource pour pouvoir le fermer
+    closeChatBox(eventSourceConversation);
 }
 
 ///////////////// GESTION AFFICHAGE DU CHAT /////////////////////
@@ -274,12 +277,9 @@ function openChatBox(conversation) {
 
     // on autorise la publication de message privé sur mercure
     conversationPublish(conversation);
-
-    // on autorise la fermeture de la chatbox et on se passe l'onjet eventSource pour pouvoir le fermer
-    closeChatBox(conversation, eventSource);
 }
 
-function closeChatBox(conversation, eventSourceConversation) {
+function closeChatBox(eventSourceConversation) {
 
     const chatBox = document.getElementById('chatBox');
     
