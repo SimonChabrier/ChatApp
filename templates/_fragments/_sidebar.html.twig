@@ -45,17 +45,37 @@
 {% block javascripts %}
 <script>
 
-    // check if the user is connected in the session as app.user or not
+    ///////////////// On crée les topics privés pour chaque utilisateur connecté ///////////////////////
+    function createPrivateChatsLinks(){
+        // On récupère la liste d'utilisateurs connectés dans le DOM
+        const userList = document.querySelectorAll('.user_connected_list li');
+
+        // On crée un lien de topic privé pour chaque utilisateur connecté avec son id
+        let privateTopicsLinks = [];
+        userList.forEach((user) => {
+        let link = new URL('https://mercure.simschab.cloud/.well-known/mercure/');
+        link.searchParams.append('private-chat', encodeURIComponent(user.dataset.id));
+        privateTopicsLinks.push(link);
+        });
+        console.log(privateTopicsLinks);
+        return privateTopicsLinks;
+    }
 
     /////////////////
     const topicslink = new URL('https://mercure.simschab.cloud/.well-known/mercure');
     topicslink.searchParams.append('topic', encodeURIComponent('user_connected'));
     topicslink.searchParams.append('topic', encodeURIComponent('user_disconnected'));
+    
+    // on ajoute les topics privés pour chaque utilisateur connecté
+    createPrivateChatsLinks();
+    
     // on peut imaginer ajouter d'autres topics pour les messages, les channels, etc...    
     const usersEventSource = new EventSource(topicslink);
     const usersConnectedList = document.querySelector('.user_connected_list');
     /// notification des utilisateurs connectés ou déconnectés
     usersEventSource.onmessage = (e) => {
+        
+        
         const data = JSON.parse(e.data);
         console.log(data);
         if (data.status === 'online') {
@@ -75,9 +95,17 @@
             li.textContent = data.username + ' : ' + data.status;
             li.dataset.id = data.user_id;
             usersConnectedList.appendChild(li);
+
+            // on met à jour les topics privés à chaque fois qu'un utilisateur se connecte
+            createPrivateChatsLinks();
+
         } else if (data.status === 'offline') {
+
             const li = usersConnectedList.querySelector(`li[data-id="${data.user_id}"]`);
             li.remove();
+
+            // on met à jour les topics privés à chaque fois qu'un utilisateur se déconnecte
+            createPrivateChatsLinks();
         }
     };
 
@@ -148,6 +176,11 @@ channelLinks.forEach((link) => {
         notifCount.classList.add('hideElement');
     });
 });
+
+
+
+
+
 </script>
 
 
