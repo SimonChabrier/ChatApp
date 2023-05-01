@@ -52,6 +52,9 @@
     const topicslink = new URL('https://mercure.simschab.cloud/.well-known/mercure');
     topicslink.searchParams.append('topic', encodeURIComponent('user_connected'));
     topicslink.searchParams.append('topic', encodeURIComponent('user_disconnected'));
+
+    //TODO si il y a des cannaux uniqument dans la liste des canaux les ajoute 
+
     topicslink.searchParams.append('topic', encodeURIComponent('channel'));
      
     // on peut imaginer ajouter d'autres topics pour les messages, les channels, etc...    

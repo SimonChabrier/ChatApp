@@ -114,17 +114,14 @@ class ChatController extends AbstractController
 
         $hub->publish($update);
 
-        //TODO persister les messages de la conversation en BDD
         // maintenant on dispatche en asynchrone pour gèrer le stockage des messages en BDD
         $bus->dispatch(new PrivateMessage(
             htmlspecialchars($data['message']), 
             (int) $data['conversation_id'], 
             (int) $data['author_id']),
-            //$this->getUser()->getId()),
         );
 
-
-        return new JsonResponse(['data' => $data]);
+        return new JsonResponse(['message' => $data['message']]);
     }
 
     /**

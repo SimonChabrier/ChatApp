@@ -1,403 +1,212 @@
 {# ici je peux utiliser une balise template ça s'y prête bien #}
-<div id="chatBox">
-    <span id="closeChatBox">X</span>
-    <div id="chatBoxBody"></div>
-    <div class="inputBlock">
-        <input id="chatBoxInput" type="text">
-        <button id="sendPrivateMessage" class="btn btn-sm btn-success" type="submit">Send</button>
-    </div>
-</div>
+<div id="appendChatBox"></div>
 
 {% if app.user %}
-
 {% block javascripts %}
 <script>
 
-//////// EN COURS DE DEV NOTIF PRIVEE IL FAUDRA RAFRAICHIR LE TABLEAU DES TOPICS A CHAQUE CONNECTION / DECONNECTION //////////
+// paramètres généraux accèssibles partout
+const appUser = {{ app.user.id }};
+const appUserName = "{{ app.user.username}}";   
 
-///////////////// On crée les topics privés pour chaque utilisateur connecté ///////////////////////
-
-document.addEventListener('DOMContentLoaded', (evt) => {
-
-    console.log('DOM chargé');
-
-//* 0 - on récupère l'id et le nom de l'utilisateur connecté en session
-
-    let appUser = {{ app.user.id }};
-    const appUserName = "{{ app.user.username}}";    
-
-//* 1 - on crée la liste potentielle de tous les topics qui peuvent exister en fonction des utilisateurs connectés.
+let invitationSend = false;
+let invitationEventSource = null;
+console.log('invitationEventSource Initial : ' + invitationEventSource);
+let chatEventSource = null;
+let conversationFromDataBase = null;
 
 
-    const topics = [];
-    // On récupère la liste d'utilisateurs connectés dans le DOM
+//// test appel méthodes
+createDomChatBox();
+createOnePrivateTopicForEachUser();
+checkInvitationEventSourceStatus();
+listenInvitationEventSourceActions();
+newConversationAlert(); // attention à l'ordre des méthodes l'eventSource doit être créé avant d'être écouté
+
+//////
+function createDomChatBox(){
+    // on crée la chatbox
+    let chatBox = document.createElement('div');
+    let closeChatBox = document.createElement('span');
+    let chatBoxBody = document.createElement('div');
+    let inputBlock = document.createElement('div');
+    let chatBoxInput = document.createElement('input');
+    let sendPrivateMessage = document.createElement('button');
+
+    chatBox.setAttribute('id', 'chatBox');
+    closeChatBox.setAttribute('id', 'closeChatBox');
+    closeChatBox.setAttribute('data-chatbox', 'chatBox'); //dataset
+    closeChatBox.innerHTML = 'X';
+    chatBoxBody.setAttribute('id', 'chatBoxBody');
+    inputBlock.setAttribute('class', 'inputBlock');
+    chatBoxInput.setAttribute('id', 'chatBoxInput');
+    chatBoxInput.setAttribute('type', 'text');
+    sendPrivateMessage.setAttribute('id', 'sendPrivateMessage');
+    sendPrivateMessage.setAttribute('class', 'btn btn-sm btn-success');
+    sendPrivateMessage.setAttribute('type', 'submit');
+    sendPrivateMessage.innerHTML = 'Send';
+
+    inputBlock.appendChild(chatBoxInput);
+    inputBlock.appendChild(sendPrivateMessage);
+    chatBox.appendChild(closeChatBox);
+    chatBox.appendChild(chatBoxBody);
+    chatBox.appendChild(inputBlock);
+
+    document.getElementById('appendChatBox').appendChild(chatBox)
+}
+/////
+function createOnePrivateTopicForEachUser (){
+    
+    const usersLinkPrivateTopics = [];
+
     const connectedUsers = document.querySelectorAll('.connectedUser');
-    // on récupère le data-set de chaque utilisateur connecté
+    
     connectedUsers.forEach((user) => {
-        // on récupère l'id de l'utilisateur sur l'attibut data-id de chaque utilisateur de la liste
+
         const userId = user.getAttribute('data-id');
-        // on crée un topic privé pour chaque utilisateur connecté
         const topic = `private-conversation=${userId}`;
-        // on ajoute le topic à la liste des topics privés
-        topics.push(topic);
+        usersLinkPrivateTopics.push(topic);
+        
     });
 
-   chooseUserInUserList(connectedUsers);
+    connectedUsers.forEach((user) => {
+        
+        user.addEventListener('click', (e) => {
+            e.preventDefault();  
+            // on lance la conversation avec l'utilisateur cliqué          
+            startConversation(user.getAttribute('data-id'));
+        });
+    });
 
-   
-//* 2 - On abonne chaque utilisateur en session au topic privé qui le concerne uniqument (son topic privé)
-
-
-    const userTopicLink = topics.filter((topic) => {
-        // on filtre la liste des topics pour ne garder que ceux qui concernent l'utilisateur connecté
+    const userTopicLink = usersLinkPrivateTopics.filter((topic) => {
         const regex = new RegExp(`^private-conversation=${appUser}$`);
         return regex.test(topic);
     });
 
-    //console.log(userTopicLink);
-
-
-//* 3 - Pour chaque utilisateur connecté, on crée la souscription de l'utilisateur à son topic privé
+    console.log('contenu du tableau de lien de topic de chaque utilisateur : ' + usersLinkPrivateTopics);
 
     const link = 'https://mercure.simschab.cloud/.well-known/mercure';
     const url = new URL(link);
     url.searchParams.append('topic', `${userTopicLink}`);
 
-    const invitationEventSource = new EventSource(url);
-
-//* 4 - On écoute les messages reçus du hub
-
-
-    invitationEventSource.onmessage = e => {
-
-        // le chatController retourne la conversation envoyée en message dans le hub par l'utilisateur qui invite
-        // L'utilisateur qui invite reçoit en réponse du ConversationCOntroller la conversation existant ou crée pour lui et l'utilisateur invité
-        // la poste au hub pour que l'utilisateur invité la reçoive avec l'invitation et l'affiche dans son chatbox
-        
-        const data = JSON.parse(e.data);
-        const conversation = data.conversation;
-        
-console.log('massages invité', conversation);
-        // ici on a les données de la conversation envoyée par le hub
-        // on le passe donc à la chatbox pour l'afficher à l'utilisateur invité
-        openChatBox(conversation);
-    };
-
-
-//* 5 - On écoute les clics sur les utilisateurs connectés pour envoyer un message privé à l'utilisateur cliqué
-function chooseUserInUserList(connectedUsers) {
-
-    connectedUsers.forEach((user) => {
-        
-        user.addEventListener('click', (e) => {
-
-            e.preventDefault();
-
-            // ici il faut que je récupère la conversation d'abord avec le user cliqué et une promesse
-            // je récupère l'id de l'utilisateur cliqué pour l'envoyer au back.
-            setConversation(user.getAttribute('data-id'));
-
-        });
-    });
-};
-
-
-//* 6 - On démarrer la conversation avec l'utilisateur cliqué
-
-
-function setConversation(userId) {
-
-    // userId est l'id de l'utilisateur sur le quel on a clliqué dans le liste pour lui envoyer un message privé
-    // via le hub mercure dans sendInvitation sur la route /ask/conversation qui va envoyer un message privé à l'utilisateur cliqué
-    // qui arrive dans le onmessage() de l'enventSource.onmessage = e => {} du hub mercure
-
-    fetch('/conversation', {
-    method: 'POST',
-    body: JSON.stringify({ participants: [ userId ] }), // ici je passe un array parce que dans le bac on fait un count sur le nombre d'éléments dans le tableau pour si le nombre de participants invités est conforme au nombre de participants attendus
-    headers: {
-        'Content-Type': 'application/json'
-    }
-    })
-    .then(response => {
-    if (!response.ok) {
-        throw new Error('Erreur lors de la récupération des données');
-    }
-    return response.json();
-    })
-    .then(data => {
-
-        //console.log(data.conversation);
-        const conversation = data.conversation;
-        // ici on a la conversation appartenant aux deux utlisateurs récupérée par leur ID sur la custom request de conversationRepository
-        // elle  est retournée par le controller sur la route /conversation après toute la série de vérifications de l'algorithme.
-        // j'invite donc l'autre utilisateur en lui retournant la conversation récupérée et une notification qui va ouvrir sa chatbox
-        sendInvitation(userId, conversation);
-    })
-    .catch(error => {
-        console.error(error);
-    });
-};
-
-//* 7 - On initialize le contenu de la chatbox avec la conversation initiale de la base de données
-
-function setChatBox(conversation){
+    invitationEventSource = new EventSource(url);
+}
+///
+function startConversation(userId) {
     
-    //console.log(conversation);
-
-    if(conversation.messages.length > 0){
-
-        conversation.messages.forEach(message => {
-
-        const span = document.createElement('span');
-        span.classList.add('private_message');
-
-        if (message.author.id == appUser ) {
-            span.style.float = 'right';
-            span.style.backgroundColor = '#cbffd6';
-        } else {
-            span.style.float = 'left';
+    // à l'appel de startConversation dans createOnePrivateTopicForEachUser on a récupré l'id de l'utilisateur que lequel on a cliqué    
+    
+    if (invitationSend === false ) {
+        
+        fetch('/conversation', {
+        method: 'POST',
+        body: JSON.stringify({ participants: [ userId ] }),
+        headers: {
+            'Content-Type': 'application/json'
         }
-
-        span.innerText = message.content;
-        chatBoxBody.appendChild(span);
-        });
-
-    }
-};
-
-//* 8 - On envoie l'invitation à l'utilisateur cliqué
-
-function sendInvitation(userId, conversation){
-
-    // on envoie l'invit et la conversation au hub pour que l'utilisateur invité la reçoive
-
-    // on prépare le message à envoyer    
-    const data = {
-        // on récupère l'id de l'utilisateur cliqué qui correspond au topic privé auquel cet utilisateur est abonné
-        topic: `private-conversation=${userId}`,
-        message: conversation // j'envoi la conversation pour l'afficher dans le chatbox de l'utilisateur cliqué
-    };
-
-    // on poste un message privé à l'utilisateur cliqué via mercure qui recevra la notification
-    fetch('/ask/conversation', {
-    method: 'POST',
-    body: JSON.stringify(data),// envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
-    })
-    .then(response => response.text())
-    .then(data => {
-        
-        //* 9 - On ouvre notre chatbox avec la conversation initiale de la base de données
-
-        // Elle sera ouverte par le hub mercure qui va recevoir le message privé 
-        // elle sera initialisée avec la conversation qu'on a reçu de la BDD puis retournée à travers le hub mercure
-
-        openChatBox(conversation);
-        
-        //console.log(data);
-
-    })
-    .catch(error => {
-        console.error(error);
-    });
-};
-
-
-///////////////// PUBLICATION DU NOUVEAU MESSAGE PRIVE SUR MERCURE //////////////////
-function conversationPublish(conversation) {
-
-    console.log('publish');
-
-    const sessionUserId = parseInt('{{ app.user.id }}');
-    const otherUserId = conversation.users.find( user => parseInt(user.id) !== sessionUserId);
-    const conversationId = conversation.id;
-    
-    document.getElementById('sendPrivateMessage').addEventListener('click', (e) => {
-
-        console.log('click');
-
-        e.preventDefault();
-        // on récupère le contenu du message dans l'input
-        const message = document.getElementById('chatBoxInput').value;
-
-        // TODO gèrer si le message est vide ajouter un message d'erreur dans une div
-        
-        const data = {  
-            topic: encodeURIComponent(`conversation/${conversationId}`),
-            message: `${message}`,
-            conversation_id: `${conversationId}`,
-            author_id: `${sessionUserId}`,
-        };
-        
-        fetch('/publish/private', {
-            method: 'POST',
-            body: JSON.stringify(data),
         })
-        .then(response => response.text())
+        .then(response => { 
+            return response.json(); // le conversation arrive ici depuis le controller et la bdd
+        })
         .then(data => {
-            console.log('Message privé envoyé');
-            document.getElementById('chatBoxInput').value = '';
+            conversation = data.conversation;
+            sendInvitation(userId, conversation);
         })
         .catch(error => {
             console.error(error);
         });
-    });
-};
-///////////////// SOUSCRIPTION CONVERSATION PRIVEES ET AFFICHAGE DES MESSAGES RECUS //////////////////
 
-// déclarer une variable conversationEventSource en dehors du bloc if pour
-// y accéder plus tard dans toutes les méthodes et l'initialiser avec ce que l'on veut à la volée
-
-//let conversationEventSource = null; 
-//console.log("ici" + conversationEventSource)
-
-function conversationSubscribe(id){
-
-    console.log('souscription à la conversation privée');
-    
-    const link = 'https://mercure.simschab.cloud/.well-known/mercure';
-    const url = new URL(link);
-    url.searchParams.append('topic', encodeURIComponent(`conversation/${id}`));
-    
-    conversationEventSource = new EventSource(url);
-        // réponses de Mercure 
-        conversationEventSource.onmessage = e => { 
-            const data = JSON.parse(e.data);
-            console.log('message' , data);
-            createNewMessageSpan(data);     
-        };
-
-    //console.log(conversationEventSource)
-
-    // on autorise la fermeture de la chatbox et on se passe l'onjet eventSource pour pouvoir le fermer
-    closeChatBox(conversationEventSource);
-
-    // on retourne l'event conversationEventSource 
-    return conversationEventSource
-};
-
-///////////////// GESTION AFFICHAGE DU CHAT /////////////////////
-
-function openChatBox(conversation) {
-
-    // on initialise la chatbox avec la conversation initiale de la base de données
-    setChatBox(conversation);
-
-    //createNewMessageSpan(conversation)
-
-    // on récupère l'envent source actif et on le ferme pour en ouvrir un nouveau à la volée sur la publication du message privé dans conversationPublish()
-    let currentEventSource = conversationSubscribe(conversation.id);
-
-    // on traite les chaines de caractères pour pouvoir les comparer (les paramètres de l'url sont encodés et on veut les comparer avec les paramètres de l'url au format string non encodé)
-    // on décode l'url de l'eventSource actuel et on extraie les paramètres de l'url puis on encode les paramètres de l'url de la conversation actuelle
-    // console.log(decodeURIComponent(currentEventSource.url).split('=')[1] === encodeURIComponent(`conversation/${conversation.id}`));
-
-    if (conversation && decodeURIComponent(currentEventSource.url).split('=')[1] === encodeURIComponent(`conversation/${conversation.id}`)) {
-    
-    const chatBox = document.getElementById('chatBox');
-
-    // on scroll vers le bas pour afficher le dernier message
-    
-    
-    chatBox.dataset.conversationId = conversation.id;
-
-        for(let i = 0; i < conversation.users.length; i++) {
-            //on ajoute les Id des participants à la conversation dans le dataset de la chatbox
-            chatBox.dataset[`user${i+1}Id`] = conversation.users[i].id;
-        }
-        chatBox.dataset.user1Id = conversation.users[0].id;
-        chatBox.dataset.user2Id = conversation.users[1].id;
-        
-        chatBox.style.display = 'block';
-
-        for (opacity = 0; opacity < 1.1; opacity = opacity + 0.1) {           
-            setTimeout(function(){chatBox.style.opacity = opacity;},150)                       
-        } 
-    
-    // on autorise la publication de message privé sur mercure
-    conversationPublish(conversation);
+            // on passe l'invitationSend à true pour ne pas pouvoir envoyer plusieurs invitations à la fois à un même utilisateur il faut vérifier l'id de l'utilisateur cliqué et l'id de l'utilisateur connecté pour ne pas pouvoir s'inviter soi-même et ne pas pouvoir envoyer plusieurs invitations à un même utilisateur mais autoriser plusieurs invitations à plusieurs utilisateurs différents
+            
+            invitationSend = true;
 
     } else {
-        console.log('conversation interdite');
+        console.log('invitation déjà envoyée');
     }
 
-    autoScrollBottom();
+    return
 };
+///
+function sendInvitation(userId, conversation){
 
-function closeChatBox(conversationEventSource) {
+    const invitationHubMessage = {
+        topic: `private-conversation=${userId}`, 
+        // on cible le topic de l'utilisateur cliqué
+        message: conversation 
+        // on lui envoie la conversation de la bdd qu'on a reçu dans startConversation
+    };
 
-    const chatBox = document.getElementById('chatBox');
-    
-    document.getElementById('closeChatBox').addEventListener('click', (e) => {
-        
-        e.preventDefault();
-
-        // on ferme l'eventSource
-        if (conversationEventSource.readyState === 1) {
-            conversationEventSource.close();
-            console.log('eventSource fermé');
-            }
-
-        // vérifier le status de l'eventSource
-//console.log(conversationEventSource.readyState);
-
-        if (e.target.id === 'closeChatBox') {
-            for (let opacity = 1; opacity > -0.1; opacity -= 0.1) {           
-                setTimeout(() => {
-                    chatBox.style.opacity = opacity;
-                }, 150);
-            } 
-            setTimeout(() => {
-                chatBox.style.display = 'none';
-
-                // clean chatbox content
-                const chatBoxBody = document.getElementById('chatBoxBody');
-                chatBoxBody.innerHTML = '';
-
-            }, 150);
-        }
+    fetch('/ask/conversation', {
+    method: 'POST',
+    body: JSON.stringify(invitationHubMessage),
+    // envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
+    })
+    .then(
+        response => console.log(response.conversation),
+        )
+    .then(data => {
+        //console.log(data);
+        //openChatBox(conversation);
+    })
+    .catch(error => {
+        console.error(error);
     });
 };
 
-function createNewMessageSpan (data) {
-    //console.log(data.message);
-    //TODO ne pas faire de doublon de message si on réouvre la chatbox
 
-    if(data.message !== undefined){
 
-    const chatBoxBody = document.getElementById('chatBoxBody');
+///
+function newConversationAlert(){
+    // on écoute les messages envoyés par le hub
+    invitationEventSource.onmessage = event => {
 
-    const span = document.createElement('span');
-
-    span.classList.add('private_message');
-
-        if (data.author_id === appUser) {
-            span.style.float = 'right';
-            span.style.backgroundColor = '#cbffd6';
-        } else {
-            span.style.float = 'left';
+    alert('invitationEventAlert - onmessage : ' + event.data);
+    
+        if(event.data){
+            const data = JSON.parse(e.data);
+            conversationFromDataBase = data.conversation;
         }
-
-    // on ajoute les données retournées par Mercure dans la réponse sur le DOM
-    span.innerText = `${data.message}`;
-    chatBoxBody.appendChild(span, chatBoxBody.lastElementChild); 
-    
-        autoScrollBottom();
-    }
-
-};
-
-
-/////// Utils
-
-function autoScrollBottom()
-{
-    const chatBoxBody = document.getElementById('chatBoxBody');
-    chatBoxBody.lastElementChild === null ? false : chatBoxBody.lastElementChild.scrollIntoView({behavior: 'smooth', block: 'end'});
-    
+        
+    };
 }
-
-}); //  end dom loaded
-
+///
+function checkInvitationEventSourceStatus(){
+    // contrôle de l'état de l'eventSource pour évaluer les actions à mener
+    switch(invitationEventSource.readyState){
+        case 0:
+            console.log('invitationEventSource.readyState === 0 (CONNECTING)');
+            break;
+        case 1:
+            console.log('invitationEventSource.readyState === 1 (OPEN)');
+            break;
+        case 2:
+            console.log('invitationEventSource.readyState === 2 (CLOSED)');
+            break;
+        case 3:
+            console.log('invitationEventSource.readyState === 3 (DISCONNECTED)');
+            break;
+        default:
+            console.log('Error: Unknown readyState value');
+            break;
+    }
+}
+///
+function listenInvitationEventSourceActions(){
+    // controle de l'état de l'eventSource pour réagir aux actions
+    
+    invitationEventSource.onopen = function(event) {
+        console.log('Connection opened. ReadyState = ' + invitationEventSource.readyState);
+    };
+    invitationEventSource.onmessage = function(event) {
+        //console.log('Message received: ' + event.data);
+    };
+    invitationEventSource.onclose = function(event) {
+        console.log('Connection closed. ReadyState = ' + invitationEventSource.readyState);
+    };
+     invitationEventSource.onerror = function(event) {
+        console.log('Error: EventSource error occurred. ReadyState = ' + invitationEventSource.readyState);
+    };
+}
 </script>
 {% endblock %}
 {% endif %}
