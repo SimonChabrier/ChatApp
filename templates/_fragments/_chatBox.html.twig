@@ -82,7 +82,7 @@ function startConversation(userId) {
             return response.json(); // le conversation arrive ici depuis le controller et la bdd
         })
         .then(data => {
-            
+
             conversation = data.conversation;
             firstChatBoxHydratation(conversation);
             closeChatBox();
@@ -212,11 +212,11 @@ function listenInvitationEventSourceActions(){
         //console.log('Message received: ' + event.data);
 
         //*** ICI IL FAUDRA GERER DE CREER UNE CHATBOX PAR CONVERSATION ET DE NE PAS EN CREER PLUSIEURS PAR CONVERSATION ENTRE DEUX MEMES UTILISATEURS. IL FAUDRA DONC GERER LES CONVERSATIONS DANS UN TABLEAU ET LES CHATBOX DANS UN AUTRE TABLEAU ET LES FAIRE CORRESPONDRE AVEC LES ID DES UTILISATEURS CONCERNES PAR LA CONVERSATION PAR EXEMPLE. IL FAUDRA AUSSI GERER LE FAIT DE NE PAS POUVOIR ENVOYER PLUSIEURS INVITATIONS A UN MEME UTILISATEUR ET NE PAS POUVOIR S'INVITER SOI-MEME.
-
+    
         if(event.data){
             const data = JSON.parse(event.data);
             originalConversation = data.conversation;
-            
+
             // on abonne l'invité à la conversation et on écoute les messages envoyés par celui qui a créé la conversation
             conversationSubscribe(originalConversation.id);
             listenConversationEventSourceActions();
@@ -239,7 +239,7 @@ function listenInvitationEventSourceActions(){
 }
 ///
 function createDomChatBox(){
-    // on crée la chatbox
+    // on crée la chatbox dans le DOM
     let chatBox = document.createElement('div');
     let closeChatBox = document.createElement('span');
     let chatBoxBody = document.createElement('div');
@@ -269,6 +269,7 @@ function createDomChatBox(){
     document.getElementById('appendChatBox').appendChild(chatBox)
 
 }
+///
 function autoScrollBottom()
 {
     const chatBoxBody = document.getElementById('chatBoxBody');
@@ -383,7 +384,6 @@ function appendNewMessage (message) {
     }
 
 };
-
 
 ////// PARIE 3 METTRE FIN A LA CONVERSATION ET TOUT REINITIALISER ///////
 
