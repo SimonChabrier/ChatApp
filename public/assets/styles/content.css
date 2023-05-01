@@ -125,6 +125,10 @@ ul.notifList {
   text-transform: lowercase;
 }
 
+.user_connected_list li {
+  cursor: pointer;
+}
+
 .notifList li {
   position: relative !important;
   margin: 5px 0;

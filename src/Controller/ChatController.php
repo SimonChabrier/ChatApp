@@ -4,13 +4,15 @@ namespace App\Controller;
 
 use App\Message\ChatMessage;
 use App\Message\MercureMessage;
+use App\Message\PrivateMessage;
+use Symfony\Component\Mercure\Update;
+use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-
 
 class ChatController extends AbstractController
 {   
@@ -26,7 +28,7 @@ class ChatController extends AbstractController
      * 
      * @Route("/publish", name="app_publish")
      */
-    public function getMessage(
+    public function getPublicChannelMessage(
             MessageBusInterface $bus,
             Request $request
             ): Response
@@ -77,4 +79,79 @@ class ChatController extends AbstractController
             'count' => 1,
         ]);
     }
+
+    /**
+     * Route qui récupère les données des conversations privées du formulaire les dipatche dans le bus
+     * 
+     * @Route("/publish/private", name="app_publish_private")
+     */
+    public function getPrivateChannelMessage(
+            Request $request,
+            HubInterface $hub,
+            MessageBusInterface $bus
+            ): Response
+    {
+    $data = json_decode(
+        $request->getContent(),
+        true // getContent() récupère le body de la requête
+    );
+
+    // Ici on dispatche en synchrone en interne car le hub Mercure est asynchrone par défaut de son côté
+    // donc c'est lui qui va gérer l'envoi des données aux clients sans bloquer le serveur de cette app.
+    // et qu'on a besoin de récupérer la réponse pour l'afficher dans la vue tout de suite.
+    // Pas besoin de lancer de worker pour le bus en synchrone et pas besoin de table dans la BDD pour les messages.
+    
+    $update = new Update(
+        $data['topic'],
+        json_encode([
+            //'topic' => $data['topic'],
+            'message' => htmlspecialchars($data['message']),
+            'conversation_id' => (int) $data['conversation_id'],
+            //'author' => $data['author'],
+            'author_id' => (int) $data['author_id'],
+        ])
+    );
+
+        $hub->publish($update);
+
+        // maintenant on dispatche en asynchrone pour gèrer le stockage des messages en BDD
+        $bus->dispatch(new PrivateMessage(
+            htmlspecialchars($data['message']), 
+            (int) $data['conversation_id'], 
+            (int) $data['author_id']),
+        );
+
+        return new JsonResponse(['message' => $data['message']]);
+    }
+
+    /**
+     * Route qui récupère les données des conversations privées du formulaire les dipatche dans le bus
+     * 
+     * @Route("/ask/conversation", name="app_ask_private")
+     */
+    public function getPrivateChannelMessage2(
+            Request $request,
+            HubInterface $hub
+            ): Response
+    {
+
+        $data = json_decode(
+            $request->getContent(),
+            true // getContent() récupère le body de la requête
+        );
+
+        $update = new Update(
+            $data['topic'],
+            json_encode([
+                'topic' => $data['topic'],
+                'conversation' => $data['message'],
+            ])
+        );
+
+        $hub->publish($update);
+
+    return new JsonResponse(['data' => $data]);
+
+    }
+                
 }
