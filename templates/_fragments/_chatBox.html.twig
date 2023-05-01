@@ -14,6 +14,7 @@ let conversationId = null;
 let invitationSend = false;
 let invitationReceived = false;
 let invitationEventSource = null;
+let conversationEventSource = null
 let originalConversation = null;
 let chatEventSource = null;
 let isChatBoxOpen = false;
@@ -24,6 +25,7 @@ let conversationFromDataBase = null;
 
 createOnePrivateTopicForEachUser();
 listenInvitationEventSourceActions();
+
 
 ////// PARTIE 1 : GESTION DE L'INVITATION & INITIALISATION AFFICHAGE CHATBOX //////
 
@@ -83,6 +85,11 @@ function startConversation(userId) {
         .then(data => {
             conversation = data.conversation;
             firstChatBoxHydratation(conversation);
+
+            // on abonne l'utilisateur à la conversation et on écoute les messages envoyés par l'utilisateur cliqué. On ne peut pas abonner l'utilisateur à la conversation avant de l'avoir créée
+            conversationSubscribe(conversation.id);
+            listenConversationEventSourceActions();
+
             sendInvitation(userId, conversation);
         })
         .catch(error => {
@@ -127,16 +134,17 @@ function sendInvitation(userId, conversation){
     joinedUserId = userId;
 };
 ///
-function firstChatBoxHydratation (data) {
+function firstChatBoxHydratation (conversation) {
 
     // on récupère les données de la conversation initiale
-    if(data && data.messages !== undefined){
+    if(conversation && conversation.messages !== undefined){
 
     // on crée la chatbox dans le DOM
     createDomChatBox();
+
     isChatBoxOpen = true; //*** ATTENTION ICI A NE PAS BLOQUER UN DES DEUX UTLISATEUR
 
-    let messages = data.messages;
+    let messages = conversation.messages;
 
     const chatBoxBody = document.getElementById('chatBoxBody');
 
@@ -157,19 +165,46 @@ function firstChatBoxHydratation (data) {
         span.innerText = `${message.content}`;
         chatBoxBody.appendChild(span, chatBoxBody.lastElementChild); 
     });
+        // on ajoute les data attributes à la chatbox
 
-        autoScrollBottom();
+        const chatBox = document.getElementById('chatBox');
+        
+        chatBox.dataset.conversationId = conversation.id;
 
+        for(let i = 0; i < conversation.users.length; i++) {
+            //on ajoute les Id des participants à la conversation dans le dataset de la chatbox
+            chatBox.dataset[`user${i+1}Id`] = conversation.users[i].id;
+        }
+        chatBox.dataset.user1Id = conversation.users[0].id;
+        chatBox.dataset.user2Id = conversation.users[1].id;
+        
+        chatBox.style.display = 'block';
+
+        for (opacity = 0; opacity < 1.1; opacity = opacity + 0.1) {           
+            
+            setTimeout(function(){
+
+                chatBox.style.opacity = opacity;
+                autoScrollBottom();
+
+            },150)                       
+        } 
+    
+        // on est hydraté on peut publier les messages
+        conversationPublish(conversation);
     }
+
 }
 ///
 function listenInvitationEventSourceActions(){
+    
     console.log('listenInvitationEventSourceActions')
     // controle de l'état de l'eventSource pour réagir aux actions
     
     invitationEventSource.onopen = function(event) {
         console.log('Connection opened. ReadyState = ' + invitationEventSource.readyState);
     };
+    
     invitationEventSource.onmessage = function(event) {
         
         // alert('invitation reçue');
@@ -181,15 +216,22 @@ function listenInvitationEventSourceActions(){
             const data = JSON.parse(event.data);
             originalConversation = data.conversation;
             
+            // on abonne l'invité à la conversation et on écoute les messages envoyés par celui qui a créé la conversation
+            conversationSubscribe(originalConversation.id);
+            listenConversationEventSourceActions();
+
             // on hydrate la chatbox avec les données de la conversation en cours ou créée si elle est nouvelle elle sera vide et on pourra la remplir avec les messages reçus...
 
-            firstChatBoxHydratation(data.conversation);
+            firstChatBoxHydratation(originalConversation);
+            
         }
     };
+    
     invitationEventSource.onclose = function(event) {
         console.log('Connection closed. ReadyState = ' + invitationEventSource.readyState);
     };
-     invitationEventSource.onerror = function(event) {
+    
+    invitationEventSource.onerror = function(event) {
         console.log('Error: EventSource error occurred. ReadyState = ' + invitationEventSource.readyState);
     };
 }
@@ -223,6 +265,7 @@ function createDomChatBox(){
     chatBox.appendChild(inputBlock);
 
     document.getElementById('appendChatBox').appendChild(chatBox)
+
 }
 function autoScrollBottom()
 {
@@ -236,14 +279,15 @@ function conversationPublish(conversation) {
 
     console.log('publish');
 
-    const otherUserId = conversation.users.find( user => parseInt(user.id) !== sessionUserId);
-    const conversationId = conversation.id;
+    const conversationId = parseInt(conversation.id);
     
-    document.getElementById('sendPrivateMessage').addEventListener('click', (e) => {
+    const sendBtn = document.getElementById('sendPrivateMessage')
+    console.log(sendBtn);
+    sendBtn.addEventListener('click', (event) => {
 
         console.log('click');
+        event.preventDefault();
 
-        e.preventDefault();
         // on récupère le contenu du message dans l'input
         const message = document.getElementById('chatBoxInput').value;
 
@@ -270,6 +314,71 @@ function conversationPublish(conversation) {
             console.error(error);
         });
     });
+};
+///
+function conversationSubscribe(conversationId) {
+
+    console.log('Event source message initilisé');
+
+    const link = 'https://mercure.simschab.cloud/.well-known/mercure';
+    const url = new URL(link);
+    url.searchParams.append('topic', encodeURIComponent(`conversation/${conversationId}`));
+
+    conversationEventSource = new EventSource(url);
+
+};
+///
+function listenConversationEventSourceActions(){ // A APELLER 
+    
+    conversationEventSource.onopen = function(event) {
+        console.log('Connection opened. ReadyState = ' + conversationEventSource.readyState);
+    };
+    
+    conversationEventSource.onmessage = function(event) {
+
+        console.log('Message received: ' + event.data);
+        if(event.data){
+
+            const message = JSON.parse(event.data);
+            appendNewMessage(message); 
+        }
+    };
+    
+    conversationEventSource.onclose = function(event) {
+        console.log('Connection closed. ReadyState = ' + conversationEventSource.readyState);
+    };
+    
+    conversationEventSource.onerror = function(event) {
+        console.log('Error: EventSource error occurred. ReadyState = ' + conversationEventSource.readyState);
+    };
+}
+///
+function appendNewMessage (message) {
+    //console.log(data.message);
+    //TODO ne pas faire de doublon de message si on réouvre la chatbox
+
+    if(message.message !== undefined){
+
+    const chatBoxBody = document.getElementById('chatBoxBody');
+
+    const span = document.createElement('span');
+
+    span.classList.add('private_message');
+
+        if (message.author_id === appUser) {
+            span.style.float = 'right';
+            span.style.backgroundColor = '#cbffd6';
+        } else {
+            span.style.float = 'left';
+        }
+
+    // on ajoute les données retournées par Mercure dans la réponse sur le DOM
+    span.innerText = `${message.message}`;
+    chatBoxBody.appendChild(span, chatBoxBody.lastElementChild); 
+    
+        autoScrollBottom();
+    }
+
 };
 
 
