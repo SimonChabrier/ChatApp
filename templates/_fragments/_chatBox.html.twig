@@ -76,7 +76,8 @@ document.addEventListener('DOMContentLoaded', (evt) => {
         
         const data = JSON.parse(e.data);
         const conversation = data.conversation;
-
+        
+console.log('massages invité', conversation);
         // ici on a les données de la conversation envoyée par le hub
         // on le passe donc à la chatbox pour l'afficher à l'utilisateur invité
         openChatBox(conversation);
@@ -126,16 +127,11 @@ function setConversation(userId) {
     .then(data => {
 
         //console.log(data.conversation);
-
+        const conversation = data.conversation;
         // ici on a la conversation appartenant aux deux utlisateurs récupérée par leur ID sur la custom request de conversationRepository
         // elle  est retournée par le controller sur la route /conversation après toute la série de vérifications de l'algorithme.
-
-        // on initilise la conversation dans la chatbox cachée avec mes messages de la base de données
-        setChatBox(data);
-
         // j'invite donc l'autre utilisateur en lui retournant la conversation récupérée et une notification qui va ouvrir sa chatbox
-        sendInvitation(userId, data.conversation);
-
+        sendInvitation(userId, conversation);
     })
     .catch(error => {
         console.error(error);
@@ -144,11 +140,9 @@ function setConversation(userId) {
 
 //* 7 - On initialize le contenu de la chatbox avec la conversation initiale de la base de données
 
-function setChatBox(data){
+function setChatBox(conversation){
     
-    let conversation = data.conversation;
-
-    console.log(conversation);
+    //console.log(conversation);
 
     if(conversation.messages.length > 0){
 
@@ -158,11 +152,9 @@ function setChatBox(data){
         span.classList.add('private_message');
 
         if (message.author.id == appUser ) {
-            console.log('je suis le premier utilisateur')
             span.style.float = 'right';
             span.style.backgroundColor = '#cbffd6';
         } else {
-            console.log('je suis le deuxième utilisateur')
             span.style.float = 'left';
         }
 
@@ -194,12 +186,11 @@ function sendInvitation(userId, conversation){
     .then(response => response.text())
     .then(data => {
         
-        //console.log(data);
-
         //* 9 - On ouvre notre chatbox avec la conversation initiale de la base de données
 
         // Elle sera ouverte par le hub mercure qui va recevoir le message privé 
-        // elle sera initialisée avec la conversation qu'on areçu de la BDD puis retournée à travers le hub mercure
+        // elle sera initialisée avec la conversation qu'on a reçu de la BDD puis retournée à travers le hub mercure
+
         openChatBox(conversation);
         
         //console.log(data);
@@ -222,7 +213,7 @@ function conversationPublish(conversation) {
     
     document.getElementById('sendPrivateMessage').addEventListener('click', (e) => {
 
-        console.log(e);
+        //console.log(e);
 
         console.log('click');
 
@@ -273,11 +264,11 @@ function conversationSubscribe(id){
         // réponses de Mercure 
         conversationEventSource.onmessage = e => { 
             const data = JSON.parse(e.data);
-            //console.log(data);
+            console.log('message' , data);
             createNewMessageSpan(data);     
         };
 
-    console.log(conversationEventSource)
+    //console.log(conversationEventSource)
 
     // on autorise la fermeture de la chatbox et on se passe l'onjet eventSource pour pouvoir le fermer
     closeChatBox(conversationEventSource);
@@ -290,7 +281,10 @@ function conversationSubscribe(id){
 
 function openChatBox(conversation) {
 
-    createNewMessageSpan(conversation.messages)
+    // on initialise la chatbox avec la conversation initiale de la base de données
+    setChatBox(conversation);
+
+    //createNewMessageSpan(conversation)
 
     // on récupère l'envent source actif et on le ferme pour en ouvrir un nouveau à la volée sur la publication du message privé dans conversationPublish()
     let currentEventSource = conversationSubscribe(conversation.id);
@@ -342,7 +336,7 @@ function closeChatBox(conversationEventSource) {
             }
 
         // vérifier le status de l'eventSource
-console.log(conversationEventSource.readyState);
+//console.log(conversationEventSource.readyState);
 
         if (e.target.id === 'closeChatBox') {
             for (let opacity = 1; opacity > -0.1; opacity -= 0.1) {           
@@ -363,7 +357,7 @@ console.log(conversationEventSource.readyState);
 };
 
 function createNewMessageSpan (data) {
-
+    //console.log(data.message);
     //TODO ne pas fire de doublon de message si on réouvre la chatbox
 
     if(data.message !== undefined){
