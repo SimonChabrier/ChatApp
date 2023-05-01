@@ -159,7 +159,7 @@ function setChatBox(data){
 
         conversation.messages.forEach(message => {
 
-        console.log(message);
+        //console.log(message);
 
         const span = document.createElement('span');
         span.classList.add('private_message');
@@ -199,8 +199,10 @@ function sendInvitation(userId, conversation){
     .then(response => response.text())
     .then(data => {
         
-        console.log(data);
-        //* 9 - On ouvre la chatbox de l'utilisateur cliqué - 
+        //console.log(data);
+
+        //* 9 - On ouvre la chatbox de l'utilisateur cliqué
+
         // Elle sera ouverte par le hub mercure qui va recevoir le message privé 
         // elle sera initialisée avec la conversation qu'on areçu de la BDD puis retournée à travers le hub mercure
         openChatBox(conversation);
@@ -266,8 +268,7 @@ function conversationPublish(conversation) {
 let eventSourceConversation = null; 
 
 function conversationSubscribe(id){
-    
-    console.log(status);
+
     console.log('souscription à la conversation privée');
     
     const link = 'https://mercure.simschab.cloud/.well-known/mercure';
@@ -278,7 +279,7 @@ function conversationSubscribe(id){
         // réponses de Mercure 
         eventSourceConversation.onmessage = e => { 
             const data = JSON.parse(e.data);
-            console.log(data);
+            //console.log(data);
             createNewMessageSpan(data);     
         };
 
@@ -301,7 +302,7 @@ function openChatBox(conversation) {
 
     // on traite les chaines de caractères pour pouvoir les comparer (les paramètres de l'url sont encodés et on veut les comparer avec les paramètres de l'url au format string non encodé)
     // on décode l'url de l'eventSource actuel et on extraie les paramètres de l'url puis on encode les paramètres de l'url de la conversation actuelle
-    console.log(decodeURIComponent(currentEventSource.url).split('=')[1] === encodeURIComponent(`conversation/${conversation.id}`));
+    // console.log(decodeURIComponent(currentEventSource.url).split('=')[1] === encodeURIComponent(`conversation/${conversation.id}`));
 
     if (conversation && decodeURIComponent(currentEventSource.url).split('=')[1] === encodeURIComponent(`conversation/${conversation.id}`)) {
     
