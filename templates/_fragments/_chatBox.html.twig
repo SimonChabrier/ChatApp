@@ -21,14 +21,10 @@ document.addEventListener('DOMContentLoaded', (evt) => {
 
     console.log('DOM chargé');
 
-//// INIT
-
-
 //* 0 - on récupère l'id et le nom de l'utilisateur connecté en session
 
-    const appUser = {{ app.user.id }};
-    const appUserName = '{{ app.user.username}}';
-    
+    let appUser = {{ app.user.id }};
+    const appUserName = "{{ app.user.username}}";    
 
 //* 1 - on crée la liste potentielle de tous les topics qui peuvent exister en fonction des utilisateurs connectés.
 
@@ -61,19 +57,18 @@ document.addEventListener('DOMContentLoaded', (evt) => {
     //console.log(userTopicLink);
 
 
-//* 3 - On crée la souscription de l'utilisateur à son topic privé
-
+//* 3 - Pour chaque utilisateur connecté, on crée la souscription de l'utilisateur à son topic privé
 
     const link = 'https://mercure.simschab.cloud/.well-known/mercure';
     const url = new URL(link);
     url.searchParams.append('topic', `${userTopicLink}`);
-    const eventSource = new EventSource(url);
 
+    const invitationEventSource = new EventSource(url);
 
 //* 4 - On écoute les messages reçus du hub
 
 
-    eventSource.onmessage = e => {
+    invitationEventSource.onmessage = e => {
 
         // le chatController retourne la conversation envoyée en message dans le hub par l'utilisateur qui invite
         // L'utilisateur qui invite reçoit en réponse du ConversationCOntroller la conversation existant ou crée pour lui et l'utilisateur invité
@@ -153,19 +148,21 @@ function setChatBox(data){
     
     let conversation = data.conversation;
 
+    console.log(conversation);
+
     if(conversation.messages.length > 0){
 
         conversation.messages.forEach(message => {
 
-        //console.log(message);
-
         const span = document.createElement('span');
         span.classList.add('private_message');
 
-        if (conversation.users[0].id === '{{ app.user.id }}' ) {
+        if (message.author.id == appUser ) {
+            console.log('je suis le premier utilisateur')
             span.style.float = 'right';
             span.style.backgroundColor = '#cbffd6';
         } else {
+            console.log('je suis le deuxième utilisateur')
             span.style.float = 'left';
         }
 
@@ -250,8 +247,6 @@ function conversationPublish(conversation) {
         .then(data => {
             console.log('Message privé envoyé');
             document.getElementById('chatBoxInput').value = '';
-            // fermer l'eventSource pour éviter les doublons
-eventSourceConversation.close();
         })
         .catch(error => {
             console.error(error);
@@ -260,9 +255,11 @@ eventSourceConversation.close();
 };
 ///////////////// SOUSCRIPTION CONVERSATION PRIVEES ET AFFICHAGE DES MESSAGES RECUS //////////////////
 
-// déclarer une variable eventSourceConversation en dehors du bloc if pour
+// déclarer une variable conversationEventSource en dehors du bloc if pour
 // y accéder plus tard dans toutes les méthodes et l'initialiser avec ce que l'on veut à la volée
-let eventSourceConversation = null; 
+
+//let conversationEventSource = null; 
+//console.log("ici" + conversationEventSource)
 
 function conversationSubscribe(id){
 
@@ -272,26 +269,28 @@ function conversationSubscribe(id){
     const url = new URL(link);
     url.searchParams.append('topic', encodeURIComponent(`conversation/${id}`));
     
-    eventSourceConversation = new EventSource(url);
+    conversationEventSource = new EventSource(url);
         // réponses de Mercure 
-        eventSourceConversation.onmessage = e => { 
+        conversationEventSource.onmessage = e => { 
             const data = JSON.parse(e.data);
             //console.log(data);
             createNewMessageSpan(data);     
         };
 
-    // on autorise la fermeture de la chatbox et on se passe l'onjet eventSource pour pouvoir le fermer
-    closeChatBox(eventSourceConversation);
+    console.log(conversationEventSource)
 
-    // on retourne l'event eventSourceConversation 
-    return eventSourceConversation
+    // on autorise la fermeture de la chatbox et on se passe l'onjet eventSource pour pouvoir le fermer
+    closeChatBox(conversationEventSource);
+
+    // on retourne l'event conversationEventSource 
+    return conversationEventSource
 };
 
 ///////////////// GESTION AFFICHAGE DU CHAT /////////////////////
 
 function openChatBox(conversation) {
 
-     createNewMessageSpan(conversation.messages)
+    createNewMessageSpan(conversation.messages)
 
     // on récupère l'envent source actif et on le ferme pour en ouvrir un nouveau à la volée sur la publication du message privé dans conversationPublish()
     let currentEventSource = conversationSubscribe(conversation.id);
@@ -328,7 +327,7 @@ function openChatBox(conversation) {
     }
 };
 
-function closeChatBox(eventSourceConversation) {
+function closeChatBox(conversationEventSource) {
 
     const chatBox = document.getElementById('chatBox');
     
@@ -337,7 +336,13 @@ function closeChatBox(eventSourceConversation) {
         e.preventDefault();
 
         // on ferme l'eventSource
-        eventSourceConversation.close();
+        if (conversationEventSource.readyState === 1) {
+            conversationEventSource.close();
+            console.log('eventSource fermé');
+            }
+
+        // vérifier le status de l'eventSource
+console.log(conversationEventSource.readyState);
 
         if (e.target.id === 'closeChatBox') {
             for (let opacity = 1; opacity > -0.1; opacity -= 0.1) {           
@@ -369,7 +374,7 @@ function createNewMessageSpan (data) {
 
     span.classList.add('private_message');
 
-        if (data.author_id === {{ app.user.id }}) {
+        if (data.author_id === appUser) {
             span.style.float = 'right';
             span.style.backgroundColor = '#cbffd6';
         } else {
