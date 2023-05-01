@@ -18,3 +18,4 @@ framework:
             App\Message\MercureMessage: sync
             # persiste les messages dans la base de données
             App\Message\ChatMessage: async
+            App\Message\PrivateMessage: async

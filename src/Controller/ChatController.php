@@ -119,8 +119,8 @@ class ChatController extends AbstractController
         $bus->dispatch(new PrivateMessage(
             htmlspecialchars($data['message']), 
             (int) $data['conversation_id'], 
-            //(int) $data['author_id'])
-            $this->getUser()->getId()),
+            (int) $data['author_id']),
+            //$this->getUser()->getId()),
         );
 
 

@@ -20,7 +20,7 @@
 document.addEventListener('DOMContentLoaded', (evt) => {
 
     console.log('DOM chargé');
-
+    
 //// INIT
 
 
@@ -46,9 +46,10 @@ document.addEventListener('DOMContentLoaded', (evt) => {
         topics.push(topic);
     });
 
-    chooseUserInUserList(connectedUsers);
+   chooseUserInUserList(connectedUsers);
+
    
-//* 2 - On abonne chaque utilisateur en seesion au topic privé qui le concerne
+//* 2 - On abonne chaque utilisateur en session au topic privé qui le concerne uniqument (son topic privé)
 
 
     const userTopicLink = topics.filter((topic) => {
@@ -66,6 +67,7 @@ document.addEventListener('DOMContentLoaded', (evt) => {
     const link = 'https://mercure.simschab.cloud/.well-known/mercure';
     const url = new URL(link);
     url.searchParams.append('topic', `${userTopicLink}`);
+    
     const eventSource = new EventSource(url);
 
 
@@ -79,7 +81,7 @@ document.addEventListener('DOMContentLoaded', (evt) => {
         // la poste au hub pour que l'utilisateur invité la reçoive avec l'invitation et l'affiche dans son chatbox
         
         const data = JSON.parse(e.data);
-        const conversation = data.conversation
+        const conversation = data.conversation;
 
         // ici on a les données de la conversation envoyée par le hub
         // on le passe donc à la chatbox pour l'afficher à l'utilisateur invité
@@ -95,65 +97,29 @@ document.addEventListener('DOMContentLoaded', (evt) => {
 function chooseUserInUserList(connectedUsers) {
 
     connectedUsers.forEach((user) => {
-
-        console.log(user);
         
         user.addEventListener('click', (e) => {
-
-            console.log('click');
 
             e.preventDefault();
 
             // ici il faut que je récupère la conversation d'abord avec le user cliqué et une promesse
             // je récupère l'id de l'utilisateur cliqué pour l'envoyer au back.
-            startConversation(user.getAttribute('data-id'));
+            setConversation(user.getAttribute('data-id'));
 
         });
     });
-}
-
-function sendInvitation(userId, conversation){
-
-    // on envoie l'invit et la conversation au hub pour que l'utilisateur invité la reçoive
-    
-    // on prépare le message à envoyer    
-    const data = {
-        // on récupère l'id de l'utilisateur cliqué qui correspond au topic privé auquel cet utilisateur est abonné
-        topic: `private-conversation=${userId}`,
-        message: conversation // j'envoi la conversation pour l'afficher dans le chatbox de l'utilisateur cliqué
-    };
-
-        // on poste un message privé à l'utilisateur cliqué via mercure qui recevra la notification
-        fetch('/ask/conversation', {
-        method: 'POST',
-        body: JSON.stringify(data),// envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
-        })
-       .then(response => response.text())
-        .then(data => {
-            // ici je reçoit le retour du controller il faut que je récupère la conversation et que je l'ouvre pour tout le monde.
-            openChatBox(conversation);
-            console.log(data);
-        })
-        .catch(error => {
-            console.error(error);
-        });
-}
+};
 
 
-
-/////////////////////////////////
-/////////////////////////////////
-/////////////////////////////////
-/////////////////////////////////
+//* 6 - On démarrer la conversation avec l'utilisateur cliqué
 
 
+function setConversation(userId) {
 
- function startConversation(userId){
-    
     // userId est l'id de l'utilisateur sur le quel on a clliqué dans le liste pour lui envoyer un message privé
     // via le hub mercure dans sendInvitation sur la route /ask/conversation qui va envoyer un message privé à l'utilisateur cliqué
     // qui arrive dans le onmessage() de l'enventSource.onmessage = e => {} du hub mercure
-    
+
     fetch('/conversation', {
     method: 'POST',
     body: JSON.stringify({ participants: [ userId ] }), // ici je passe un array parce que dans le bac on fait un count sur le nombre d'éléments dans le tableau pour si le nombre de participants invités est conforme au nombre de participants attendus
@@ -168,24 +134,87 @@ function sendInvitation(userId, conversation){
     return response.json();
     })
     .then(data => {
-        console.log(data.conversation);
+
+        //console.log(data.conversation);
 
         // ici on a la conversation appartenant aux deux utlisateurs récupérée par leur ID sur la custom request de conversationRepository
         // elle  est retournée par le controller sur la route /conversation après toute la série de vérifications de l'algorithme.
-        
+
+        // on initilise la conversation dans la chatbox cachée avec mes messages de la base de données
+        setChatBox(data.conversation);
+
         // j'invite donc l'autre utilisateur en lui retournant la conversation récupérée et une notification qui va ouvrir sa chatbox
         sendInvitation(userId, data.conversation);
+
     })
     .catch(error => {
         console.error(error);
     });
- }   
+};
+
+//* 7 - On initialize le contenu de la chatbox avec la conversation initiale de la base de données
+
+function setChatBox(data.conversation){
+
+    let conversation = data.conversation;
+    const chatBoxBody = document.getElementById('chatBoxBody');
+
+    if(conversation.messages.length > 0){
+
+        conversation.messages.forEach(message => {
+
+        const span = document.createElement('span');
+        span.classList.add('private_message');
+
+        if (conversation.users[0].id === {{ app.user.id }}) {
+            span.style.float = 'right';
+            span.style.backgroundColor = '#cbffd6';
+        } else {
+            span.style.float = 'left';
+        }
+
+            span.innerText = message.content;
+            chatBoxBody.appendChild(span);
+        });
+    }
+};
+
+//* 8 - On envoie l'invitation à l'utilisateur cliqué
+
+function sendInvitation(userId, conversation){
+
+    // on envoie l'invit et la conversation au hub pour que l'utilisateur invité la reçoive
+
+    // on prépare le message à envoyer    
+    const data = {
+        // on récupère l'id de l'utilisateur cliqué qui correspond au topic privé auquel cet utilisateur est abonné
+        topic: `private-conversation=${userId}`,
+        message: conversation // j'envoi la conversation pour l'afficher dans le chatbox de l'utilisateur cliqué
+    };
+
+    // on poste un message privé à l'utilisateur cliqué via mercure qui recevra la notification
+    fetch('/ask/conversation', {
+    method: 'POST',
+    body: JSON.stringify(data),// envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
+    })
+    .then(response => response.text())
+    .then(data => {
+        
+        console.log(data);
+        //* 9 - On ouvre la chatbox de l'utilisateur cliqué - 
+        // Elle sera ouverte par le hub mercure qui va recevoir le message privé 
+        // elle sera initialisée avec la conversation qu'on areçu de la BDD puis retournée à travers le hub mercure
+        openChatBox(conversation);
+        
+        //console.log(data);
+
+    })
+    .catch(error => {
+        console.error(error);
+    });
+};
 
 
-/////////////////////////////////
-/////////////////////////////////
-/////////////////////////////////
-///////////////////////////////// 29 AVRIL PUBLICATION MESSAGE PRIVÉ
 ///////////////// PUBLICATION DU NOUVEAU MESSAGE PRIVE SUR MERCURE //////////////////
 function conversationPublish(conversation) {
 
@@ -206,6 +235,8 @@ function conversationPublish(conversation) {
         e.preventDefault();
         // on récupère le contenu du message dans l'input
         const message = document.getElementById('chatBoxInput').value;
+
+        // TODO gèrer si le message est vide ajouter un message d'erreur dans une div
         
         const data = {  
         
@@ -228,7 +259,7 @@ function conversationPublish(conversation) {
             console.error(error);
         });
     });
-}
+};
 ///////////////// SOUSCRIPTION CONVERSATION PRIVEES ET AFFICHAGE DES MESSAGES RECUS //////////////////
 
 // déclarer une variable eventSourceConversation en dehors du bloc if pour
@@ -237,7 +268,6 @@ let eventSourceConversation = null;
 
 function conversationSubscribe(id){
     
-    console.log(status);
     console.log('souscription à la conversation privée');
     
     const link = 'https://mercure.simschab.cloud/.well-known/mercure';
@@ -257,7 +287,7 @@ function conversationSubscribe(id){
 
     // on retourne l'event eventSourceConversation 
     return eventSourceConversation
-}
+};
 
 ///////////////// GESTION AFFICHAGE DU CHAT /////////////////////
 
@@ -299,7 +329,7 @@ function openChatBox(conversation) {
     } else {
         console.log('conversation interdite');
     }
-}
+};
 
 function closeChatBox(eventSourceConversation) {
 
@@ -328,9 +358,17 @@ function closeChatBox(eventSourceConversation) {
             }, 150);
         }
     });
-}
+};
 
 function createNewMessageSpan (data) {
+
+    //TODO ne pas fire de doublon de message si on réouvre la chatbox
+    // close current event source
+
+    //let currentEventSource = conversationSubscribe(data.conversation_id);
+    //currentEventSource.close();
+
+    if(data.message !== undefined){
 
     const chatBoxBody = document.getElementById('chatBoxBody');
 
@@ -338,7 +376,7 @@ function createNewMessageSpan (data) {
 
     span.classList.add('private_message');
 
-        if (data.author_id === {{ app.user.id }}) {
+        if (data.author_id === appUser) {
             span.style.float = 'right';
             span.style.backgroundColor = '#cbffd6';
         } else {
@@ -348,13 +386,19 @@ function createNewMessageSpan (data) {
     // on ajoute les données retournées par Mercure dans la réponse sur le DOM
     span.innerText = `${data.message}`;
     chatBoxBody.appendChild(span, chatBoxBody.lastElementChild); 
-}
 
+    }
+
+};
 
 
 }); //  end dom loaded
 
+
+
 </script>
 {% endblock %}
+
+
 {% endif %}
 
