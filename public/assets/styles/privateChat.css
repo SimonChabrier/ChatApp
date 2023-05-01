@@ -10,6 +10,7 @@
     right: 30px;
     display: none;
     opacity: 0;
+    transition: all .1s ease-in-out;
 }
 
 #closeChatBox {

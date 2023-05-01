@@ -397,7 +397,11 @@ function closeChatBox() {
         
         const chatBox = document.getElementById('chatBox');
         
-        chatBox.remove();
+        chatBox.style.opacity = '0';
+
+        setTimeout(() => {
+            chatBox.remove();
+        }, 100);
 
         // ATTENTION IL FAUDRA GERE LE CAS OU L'UN DES DEUX NE L'A PAS FERME IL Y AURA DOUBLON DE CONVERSATION ET DONC DE MESSAGES.
         // IL FAUDRAIT FAIRE UNE NOTIF MERCURE DE CLOTURE DE CONVERSATION POUR LES DEUX USERS POUR ARRETER LES EVENT SOURCE
