@@ -21,11 +21,10 @@ let isChatBoxOpen = false;
 let conversationFromDataBase = null;
 
 
-//// appel méthodes
+//// appel méthodes indispensables au fonctionnement de l'application
 
-createOnePrivateTopicForEachUser();
-listenInvitationEventSourceActions();
-
+createOnePrivateTopicForEachUser(); // creation d'un topic privé pour chaque utilisateur connecté
+listenInvitationEventSourceActions(); // écoute des actions sur les topics privés
 
 ////// PARTIE 1 : GESTION DE L'INVITATION & INITIALISATION AFFICHAGE CHATBOX //////
 
@@ -83,8 +82,10 @@ function startConversation(userId) {
             return response.json(); // le conversation arrive ici depuis le controller et la bdd
         })
         .then(data => {
+            
             conversation = data.conversation;
             firstChatBoxHydratation(conversation);
+            closeChatBox();
 
             // on abonne l'utilisateur à la conversation et on écoute les messages envoyés par l'utilisateur cliqué. On ne peut pas abonner l'utilisateur à la conversation avant de l'avoir créée
             conversationSubscribe(conversation.id);
@@ -223,6 +224,7 @@ function listenInvitationEventSourceActions(){
             // on hydrate la chatbox avec les données de la conversation en cours ou créée si elle est nouvelle elle sera vide et on pourra la remplir avec les messages reçus...
 
             firstChatBoxHydratation(originalConversation);
+            closeChatBox();
             
         }
     };
@@ -273,6 +275,7 @@ function autoScrollBottom()
     chatBoxBody.lastElementChild === null ? false : chatBoxBody.lastElementChild.scrollIntoView({behavior: 'smooth', block: 'end'});
     
 }
+
 /////// PARIE 2 GESTION DE LA CONVERSATION & MISE A JOUR DE LA CHATBOX ///////
 
 function conversationPublish(conversation) {
@@ -290,8 +293,6 @@ function conversationPublish(conversation) {
 
         // on récupère le contenu du message dans l'input
         const message = document.getElementById('chatBoxInput').value;
-
-        // TODO gèrer si le message est vide ajouter un message d'erreur dans une div
         
         const data = {  
             topic: encodeURIComponent(`conversation/${conversationId}`),
@@ -306,6 +307,7 @@ function conversationPublish(conversation) {
         })
         .then(response => response.text())
         .then(data => {
+
             console.log('Message privé envoyé');
             console.log(data);
             document.getElementById('chatBoxInput').value = '';
@@ -377,10 +379,35 @@ function appendNewMessage (message) {
     chatBoxBody.appendChild(span, chatBoxBody.lastElementChild); 
     
         autoScrollBottom();
+
     }
 
 };
 
+
+////// PARIE 3 METTRE FIN A LA CONVERSATION ET TOUT REINITIALISER ///////
+
+function closeChatBox() {
+    console.log('closeChatBox');
+    const closeChatBox = document.getElementById('closeChatBox');
+    
+    closeChatBox.addEventListener('click', (event) => {
+        
+        event.preventDefault();
+        
+        const chatBox = document.getElementById('chatBox');
+        
+        chatBox.remove();
+
+        // ATTENTION IL FAUDRA GERE LE CAS OU L'UN DES DEUX NE L'A PAS FERME IL Y AURA DOUBLON DE CONVERSATION ET DONC DE MESSAGES.
+        // IL FAUDRAIT FAIRE UNE NOTIF MERCURE DE CLOTURE DE CONVERSATION POUR LES DEUX USERS POUR ARRETER LES EVENT SOURCE
+        // POUR LE SECOND USER QUI N'A PAS FERME LA CONVERSATION.
+        // ET RELANCER LE PROCESS D'INVITATION A 0 SI L'AUTRE LA REEOUVRE....REGARDER DU COTE DE L'ETAT COURANT DES EVENT SOURCE QUE L'ON ECOUTE TOUS DANS : listenConversationEventSourceActions() et listenInvitationEventSourceActions()
+
+        conversationEventSource.close();
+        conversationEventSource = null;
+    });
+}
 
 </script>
 {% endblock %}
