@@ -111,6 +111,7 @@ function startConversation(userId) {
         })
         .then(data => {
             conversation = data.conversation;
+            firstChatBoxHydratation(conversation);
             sendInvitation(userId, conversation);
         })
         .catch(error => {
@@ -173,8 +174,7 @@ function newConversationAlert(){
     };
 }
 function firstChatBoxHydratation (data) {
-    //TODO ne pas faire de doublon de message si on réouvre la chatbox
-    console.log(data);
+    // on récupère les données de la conversation initiale
     if(data.messages !== undefined){
 
     let messages = data.messages;
