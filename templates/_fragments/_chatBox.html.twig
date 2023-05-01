@@ -10,7 +10,9 @@ const appUser = {{ app.user.id }};
 const appUserName = "{{ app.user.username}}";   
 
 let invitationSend = false;
+let invitationReceived = false;
 let invitationEventSource = null;
+let originalConversation = null;
 console.log('invitationEventSource Initial : ' + invitationEventSource);
 let chatEventSource = null;
 let conversationFromDataBase = null;
@@ -22,7 +24,6 @@ createOnePrivateTopicForEachUser();
 checkInvitationEventSourceStatus();
 listenInvitationEventSourceActions();
 newConversationAlert(); // attention à l'ordre des méthodes l'eventSource doit être créé avant d'être écouté
-
 //////
 function createDomChatBox(){
     // on crée la chatbox
@@ -152,22 +153,52 @@ function sendInvitation(userId, conversation){
         console.error(error);
     });
 };
-
-
-
 ///
 function newConversationAlert(){
     // on écoute les messages envoyés par le hub
     invitationEventSource.onmessage = event => {
-
-    alert('invitationEventAlert - onmessage : ' + event.data);
+        
+    invitationReceived = true;
+    
+    // afficher la chat box avec la conversation reçue comme contenu
     
         if(event.data){
-            const data = JSON.parse(e.data);
-            conversationFromDataBase = data.conversation;
+            const data = JSON.parse(event.data);
+            originalConversation = data.conversation;
+            // loop on conversation to hydrate the chatbox
+            firstChatBoxHydratation(data.conversation);
         }
-        
+
+
     };
+}
+function firstChatBoxHydratation (data) {
+    //TODO ne pas faire de doublon de message si on réouvre la chatbox
+    console.log(data);
+    if(data.messages !== undefined){
+
+    let messages = data.messages;
+
+    const chatBoxBody = document.getElementById('chatBoxBody');
+
+    messages.forEach((message) => {
+
+        const span = document.createElement('span');
+
+        span.classList.add('private_message');
+
+            if (message.author.id === appUser) {
+                span.style.float = 'right';
+                span.style.backgroundColor = '#cbffd6';
+            } else {
+                span.style.float = 'left';
+            }
+
+        // on ajoute les données retournées par Mercure dans la réponse sur le DOM
+        span.innerText = `${message.content}`;
+        chatBoxBody.appendChild(span, chatBoxBody.lastElementChild); 
+    });
+    }
 }
 ///
 function checkInvitationEventSourceStatus(){
@@ -206,6 +237,12 @@ function listenInvitationEventSourceActions(){
      invitationEventSource.onerror = function(event) {
         console.log('Error: EventSource error occurred. ReadyState = ' + invitationEventSource.readyState);
     };
+}
+function autoScrollBottom()
+{
+    const chatBoxBody = document.getElementById('chatBoxBody');
+    chatBoxBody.lastElementChild === null ? false : chatBoxBody.lastElementChild.scrollIntoView({behavior: 'smooth', block: 'end'});
+    
 }
 </script>
 {% endblock %}
