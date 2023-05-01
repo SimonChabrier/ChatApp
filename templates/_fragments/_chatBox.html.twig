@@ -20,7 +20,7 @@
 document.addEventListener('DOMContentLoaded', (evt) => {
 
     console.log('DOM chargé');
-    
+
 //// INIT
 
 
@@ -67,7 +67,6 @@ document.addEventListener('DOMContentLoaded', (evt) => {
     const link = 'https://mercure.simschab.cloud/.well-known/mercure';
     const url = new URL(link);
     url.searchParams.append('topic', `${userTopicLink}`);
-    
     const eventSource = new EventSource(url);
 
 
@@ -92,8 +91,6 @@ document.addEventListener('DOMContentLoaded', (evt) => {
 
 
 //* 5 - On écoute les clics sur les utilisateurs connectés pour envoyer un message privé à l'utilisateur cliqué
-
-
 function chooseUserInUserList(connectedUsers) {
 
     connectedUsers.forEach((user) => {
@@ -141,7 +138,7 @@ function setConversation(userId) {
         // elle  est retournée par le controller sur la route /conversation après toute la série de vérifications de l'algorithme.
 
         // on initilise la conversation dans la chatbox cachée avec mes messages de la base de données
-        setChatBox(data.conversation);
+        setChatBox(data);
 
         // j'invite donc l'autre utilisateur en lui retournant la conversation récupérée et une notification qui va ouvrir sa chatbox
         sendInvitation(userId, data.conversation);
@@ -154,28 +151,30 @@ function setConversation(userId) {
 
 //* 7 - On initialize le contenu de la chatbox avec la conversation initiale de la base de données
 
-function setChatBox(data.conversation){
-
+function setChatBox(data){
+    
     let conversation = data.conversation;
-    const chatBoxBody = document.getElementById('chatBoxBody');
 
     if(conversation.messages.length > 0){
 
         conversation.messages.forEach(message => {
 
+        console.log(message);
+
         const span = document.createElement('span');
         span.classList.add('private_message');
 
-        if (conversation.users[0].id === {{ app.user.id }}) {
+        if (conversation.users[0].id === '{{ app.user.id }}' ) {
             span.style.float = 'right';
             span.style.backgroundColor = '#cbffd6';
         } else {
             span.style.float = 'left';
         }
 
-            span.innerText = message.content;
-            chatBoxBody.appendChild(span);
+        span.innerText = message.content;
+        chatBoxBody.appendChild(span);
         });
+
     }
 };
 
@@ -268,6 +267,7 @@ let eventSourceConversation = null;
 
 function conversationSubscribe(id){
     
+    console.log(status);
     console.log('souscription à la conversation privée');
     
     const link = 'https://mercure.simschab.cloud/.well-known/mercure';
@@ -376,7 +376,7 @@ function createNewMessageSpan (data) {
 
     span.classList.add('private_message');
 
-        if (data.author_id === appUser) {
+        if (data.author_id === {{ app.user.id }}) {
             span.style.float = 'right';
             span.style.backgroundColor = '#cbffd6';
         } else {
@@ -394,11 +394,7 @@ function createNewMessageSpan (data) {
 
 }); //  end dom loaded
 
-
-
 </script>
 {% endblock %}
-
-
 {% endif %}
 
