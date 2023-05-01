@@ -8,54 +8,25 @@
 // paramètres généraux accèssibles partout
 const appUser = {{ app.user.id }};
 const appUserName = "{{ app.user.username}}";   
+let joinedUserId = null;
+let conversationId = null;
 
 let invitationSend = false;
 let invitationReceived = false;
 let invitationEventSource = null;
 let originalConversation = null;
-console.log('invitationEventSource Initial : ' + invitationEventSource);
 let chatEventSource = null;
+let isChatBoxOpen = false;
 let conversationFromDataBase = null;
 
 
-//// test appel méthodes
-createDomChatBox();
+//// appel méthodes
+
 createOnePrivateTopicForEachUser();
-checkInvitationEventSourceStatus();
 listenInvitationEventSourceActions();
-newConversationAlert(); // attention à l'ordre des méthodes l'eventSource doit être créé avant d'être écouté
-//////
-function createDomChatBox(){
-    // on crée la chatbox
-    let chatBox = document.createElement('div');
-    let closeChatBox = document.createElement('span');
-    let chatBoxBody = document.createElement('div');
-    let inputBlock = document.createElement('div');
-    let chatBoxInput = document.createElement('input');
-    let sendPrivateMessage = document.createElement('button');
 
-    chatBox.setAttribute('id', 'chatBox');
-    closeChatBox.setAttribute('id', 'closeChatBox');
-    closeChatBox.setAttribute('data-chatbox', 'chatBox'); //dataset
-    closeChatBox.innerHTML = 'X';
-    chatBoxBody.setAttribute('id', 'chatBoxBody');
-    inputBlock.setAttribute('class', 'inputBlock');
-    chatBoxInput.setAttribute('id', 'chatBoxInput');
-    chatBoxInput.setAttribute('type', 'text');
-    sendPrivateMessage.setAttribute('id', 'sendPrivateMessage');
-    sendPrivateMessage.setAttribute('class', 'btn btn-sm btn-success');
-    sendPrivateMessage.setAttribute('type', 'submit');
-    sendPrivateMessage.innerHTML = 'Send';
+////// PARTIE 1 : GESTION DE L'INVITATION & INITIALISATION AFFICHAGE CHATBOX //////
 
-    inputBlock.appendChild(chatBoxInput);
-    inputBlock.appendChild(sendPrivateMessage);
-    chatBox.appendChild(closeChatBox);
-    chatBox.appendChild(chatBoxBody);
-    chatBox.appendChild(inputBlock);
-
-    document.getElementById('appendChatBox').appendChild(chatBox)
-}
-/////
 function createOnePrivateTopicForEachUser (){
     
     const usersLinkPrivateTopics = [];
@@ -143,40 +114,27 @@ function sendInvitation(userId, conversation){
     body: JSON.stringify(invitationHubMessage),
     // envoyer le message et le topic pour le publier sur le hub et le diffuser aux abonnés
     })
-    .then(
-        response => console.log(response.conversation),
-        )
+    .then(response => {
+        //console.log(response);
+    })
     .then(data => {
         //console.log(data);
-        //openChatBox(conversation);
     })
     .catch(error => {
         console.error(error);
     });
+
+    joinedUserId = userId;
 };
 ///
-function newConversationAlert(){
-    // on écoute les messages envoyés par le hub
-    invitationEventSource.onmessage = event => {
-        
-    invitationReceived = true;
-    
-    // afficher la chat box avec la conversation reçue comme contenu
-    
-        if(event.data){
-            const data = JSON.parse(event.data);
-            originalConversation = data.conversation;
-            // loop on conversation to hydrate the chatbox
-            firstChatBoxHydratation(data.conversation);
-        }
-
-
-    };
-}
-///
 function firstChatBoxHydratation (data) {
+
     // on récupère les données de la conversation initiale
-    if(data.messages !== undefined){
+    if(data && data.messages !== undefined){
+
+    // on crée la chatbox dans le DOM
+    createDomChatBox();
+    isChatBoxOpen = true; //*** ATTENTION ICI A NE PAS BLOQUER UN DES DEUX UTLISATEUR
 
     let messages = data.messages;
 
@@ -200,40 +158,33 @@ function firstChatBoxHydratation (data) {
         chatBoxBody.appendChild(span, chatBoxBody.lastElementChild); 
     });
 
-        autoScrollBottom()
-        
-    }
-}
-///
-function checkInvitationEventSourceStatus(){
-    // contrôle de l'état de l'eventSource pour évaluer les actions à mener
-    switch(invitationEventSource.readyState){
-        case 0:
-            console.log('invitationEventSource.readyState === 0 (CONNECTING)');
-            break;
-        case 1:
-            console.log('invitationEventSource.readyState === 1 (OPEN)');
-            break;
-        case 2:
-            console.log('invitationEventSource.readyState === 2 (CLOSED)');
-            break;
-        case 3:
-            console.log('invitationEventSource.readyState === 3 (DISCONNECTED)');
-            break;
-        default:
-            console.log('Error: Unknown readyState value');
-            break;
+        autoScrollBottom();
+
     }
 }
 ///
 function listenInvitationEventSourceActions(){
+    console.log('listenInvitationEventSourceActions')
     // controle de l'état de l'eventSource pour réagir aux actions
     
     invitationEventSource.onopen = function(event) {
         console.log('Connection opened. ReadyState = ' + invitationEventSource.readyState);
     };
     invitationEventSource.onmessage = function(event) {
+        
+        // alert('invitation reçue');
         //console.log('Message received: ' + event.data);
+
+        //*** ICI IL FAUDRA GERER DE CREER UNE CHATBOX PAR CONVERSATION ET DE NE PAS EN CREER PLUSIEURS PAR CONVERSATION ENTRE DEUX MEMES UTILISATEURS. IL FAUDRA DONC GERER LES CONVERSATIONS DANS UN TABLEAU ET LES CHATBOX DANS UN AUTRE TABLEAU ET LES FAIRE CORRESPONDRE AVEC LES ID DES UTILISATEURS CONCERNES PAR LA CONVERSATION PAR EXEMPLE. IL FAUDRA AUSSI GERER LE FAIT DE NE PAS POUVOIR ENVOYER PLUSIEURS INVITATIONS A UN MEME UTILISATEUR ET NE PAS POUVOIR S'INVITER SOI-MEME.
+
+        if(event.data){
+            const data = JSON.parse(event.data);
+            originalConversation = data.conversation;
+            
+            // on hydrate la chatbox avec les données de la conversation en cours ou créée si elle est nouvelle elle sera vide et on pourra la remplir avec les messages reçus...
+
+            firstChatBoxHydratation(data.conversation);
+        }
     };
     invitationEventSource.onclose = function(event) {
         console.log('Connection closed. ReadyState = ' + invitationEventSource.readyState);
@@ -242,12 +193,86 @@ function listenInvitationEventSourceActions(){
         console.log('Error: EventSource error occurred. ReadyState = ' + invitationEventSource.readyState);
     };
 }
+///
+function createDomChatBox(){
+    // on crée la chatbox
+    let chatBox = document.createElement('div');
+    let closeChatBox = document.createElement('span');
+    let chatBoxBody = document.createElement('div');
+    let inputBlock = document.createElement('div');
+    let chatBoxInput = document.createElement('input');
+    let sendPrivateMessage = document.createElement('button');
+
+    chatBox.setAttribute('id', 'chatBox');
+    closeChatBox.setAttribute('id', 'closeChatBox');
+    closeChatBox.setAttribute('data-chatbox', 'chatBox'); //dataset
+    closeChatBox.innerHTML = 'X';
+    chatBoxBody.setAttribute('id', 'chatBoxBody');
+    inputBlock.setAttribute('class', 'inputBlock');
+    chatBoxInput.setAttribute('id', 'chatBoxInput');
+    chatBoxInput.setAttribute('type', 'text');
+    sendPrivateMessage.setAttribute('id', 'sendPrivateMessage');
+    sendPrivateMessage.setAttribute('class', 'btn btn-sm btn-success');
+    sendPrivateMessage.setAttribute('type', 'submit');
+    sendPrivateMessage.innerHTML = 'Send';
+
+    inputBlock.appendChild(chatBoxInput);
+    inputBlock.appendChild(sendPrivateMessage);
+    chatBox.appendChild(closeChatBox);
+    chatBox.appendChild(chatBoxBody);
+    chatBox.appendChild(inputBlock);
+
+    document.getElementById('appendChatBox').appendChild(chatBox)
+}
 function autoScrollBottom()
 {
     const chatBoxBody = document.getElementById('chatBoxBody');
     chatBoxBody.lastElementChild === null ? false : chatBoxBody.lastElementChild.scrollIntoView({behavior: 'smooth', block: 'end'});
     
 }
+/////// PARIE 2 GESTION DE LA CONVERSATION & MISE A JOUR DE LA CHATBOX ///////
+
+function conversationPublish(conversation) {
+
+    console.log('publish');
+
+    const otherUserId = conversation.users.find( user => parseInt(user.id) !== sessionUserId);
+    const conversationId = conversation.id;
+    
+    document.getElementById('sendPrivateMessage').addEventListener('click', (e) => {
+
+        console.log('click');
+
+        e.preventDefault();
+        // on récupère le contenu du message dans l'input
+        const message = document.getElementById('chatBoxInput').value;
+
+        // TODO gèrer si le message est vide ajouter un message d'erreur dans une div
+        
+        const data = {  
+            topic: encodeURIComponent(`conversation/${conversationId}`),
+            message: `${message}`,
+            conversation_id: `${conversationId}`,
+            author_id: parseInt(appUser),
+        };
+        
+        fetch('/publish/private', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log('Message privé envoyé');
+            console.log(data);
+            document.getElementById('chatBoxInput').value = '';
+        })
+        .catch(error => {
+            console.error(error);
+        });
+    });
+};
+
+
 </script>
 {% endblock %}
 {% endif %}
