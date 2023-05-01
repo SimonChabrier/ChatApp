@@ -213,8 +213,6 @@ function conversationPublish(conversation) {
     
     document.getElementById('sendPrivateMessage').addEventListener('click', (e) => {
 
-        //console.log(e);
-
         console.log('click');
 
         e.preventDefault();
@@ -296,7 +294,9 @@ function openChatBox(conversation) {
     if (conversation && decodeURIComponent(currentEventSource.url).split('=')[1] === encodeURIComponent(`conversation/${conversation.id}`)) {
     
     const chatBox = document.getElementById('chatBox');
-    //console.log(conversation.users);
+
+    // on scroll vers le bas pour afficher le dernier message
+    
     
     chatBox.dataset.conversationId = conversation.id;
 
@@ -319,6 +319,8 @@ function openChatBox(conversation) {
     } else {
         console.log('conversation interdite');
     }
+
+    autoScrollBottom();
 };
 
 function closeChatBox(conversationEventSource) {
@@ -358,7 +360,7 @@ function closeChatBox(conversationEventSource) {
 
 function createNewMessageSpan (data) {
     //console.log(data.message);
-    //TODO ne pas fire de doublon de message si on réouvre la chatbox
+    //TODO ne pas faire de doublon de message si on réouvre la chatbox
 
     if(data.message !== undefined){
 
@@ -378,11 +380,21 @@ function createNewMessageSpan (data) {
     // on ajoute les données retournées par Mercure dans la réponse sur le DOM
     span.innerText = `${data.message}`;
     chatBoxBody.appendChild(span, chatBoxBody.lastElementChild); 
-
+    
+        autoScrollBottom();
     }
 
 };
 
+
+/////// Utils
+
+function autoScrollBottom()
+{
+    const chatBoxBody = document.getElementById('chatBoxBody');
+    chatBoxBody.lastElementChild.scrollIntoView({behavior: 'smooth', block: 'end'});
+    return true;
+}
 
 }); //  end dom loaded
 
