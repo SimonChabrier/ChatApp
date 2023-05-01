@@ -173,6 +173,7 @@ function newConversationAlert(){
 
     };
 }
+///
 function firstChatBoxHydratation (data) {
     // on récupère les données de la conversation initiale
     if(data.messages !== undefined){
@@ -198,6 +199,9 @@ function firstChatBoxHydratation (data) {
         span.innerText = `${message.content}`;
         chatBoxBody.appendChild(span, chatBoxBody.lastElementChild); 
     });
+
+        autoScrollBottom()
+        
     }
 }
 ///
