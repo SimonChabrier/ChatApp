@@ -392,8 +392,8 @@ function createNewMessageSpan (data) {
 function autoScrollBottom()
 {
     const chatBoxBody = document.getElementById('chatBoxBody');
-    chatBoxBody.lastElementChild.scrollIntoView({behavior: 'smooth', block: 'end'});
-    return true;
+    chatBoxBody.lastElementChild === null ? false : chatBoxBody.lastElementChild.scrollIntoView({behavior: 'smooth', block: 'end'});
+    
 }
 
 }); //  end dom loaded
